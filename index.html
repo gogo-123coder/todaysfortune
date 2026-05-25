@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>台股懶人分析 · 一眼看懂技術面</title>
-  <link rel="apple-touch-icon" href="./icon.png">
-<link rel="icon" type="image/png" href="./icon.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -117,7 +115,7 @@
 // ⭐ Cloudflare Worker 網址（部署後填入！）
 //    沒填空字串 = 即時報價自動關閉，其他功能不受影響（仍可看到 FinMind 收盤資料）
 // ============================================================
-const WORKER_URL = ''; // 例如：'https://stock-worker.your-name.workers.dev'
+const WORKER_URL = 'https://stock-worker.goomoj.workers.dev/'; // 例如：'https://stock-worker.your-name.workers.dev'
 
 // ============================================================
 // 設定 — 使用 FinMind API（台灣專屬、原生支援 CORS、不需 proxy）
