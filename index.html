@@ -37,7 +37,7 @@
         <div class="flex items-center gap-3 flex-wrap">
           <h1 class="text-2xl sm:text-3xl font-black text-slate-800">📈 台股盤後分析</h1>
         </div>
-        <p class="text-sm text-slate-500 mt-2">輸入代號 → 昨天收盤價與分析波段</p>
+        <p class="text-sm text-slate-500 mt-2">輸入代號 → 最新收盤價與技術分析</p>
       </div>
       <div class="text-xs text-slate-400">
         <span id="lastUpdate">尚未查詢</span>
@@ -73,7 +73,7 @@
   <!-- 本日適合進場 -->
   <section id="screenSection" class="mb-5">
     <div class="flex items-center justify-between mb-3">
-      <h2 class="text-sm font-bold text-slate-600">✨ 本日適合進場（熱門 30 檔掃描）</h2>
+      <h2 class="text-sm font-bold text-slate-600">✨ 盤後關注清單（熱門 30 檔掃描）</h2>
       <button id="refreshScreen" class="text-xs text-blue-500 hover:underline">🔄 重新掃描</button>
     </div>
     <div id="screenContent" class="bg-white rounded-2xl shadow-sm p-4">
@@ -106,7 +106,7 @@
   <footer class="mt-10 text-center text-xs text-slate-400 leading-relaxed pb-6">
     <p class="font-bold text-slate-500">⚠️ 免責聲明</p>
     <p class="mt-1">本網站僅依據歷史價格計算技術指標，<b>不構成投資建議</b>，亦無法保證未來走勢。</p>
-    <p>投資有風險，請自行判斷並承擔結果。資料來源：FinMind（每日收盤）/ TWSE MIS（盤中即時）/ Google 新聞（消息面）。</p>
+    <p>投資有風險，請自行判斷並承擔結果。資料來源：FinMind（每日收盤）/ Google 新聞（消息面）。</p>
   </footer>
 
 </div>
@@ -738,8 +738,8 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
   if (a.trend === 'bull') trendBullets.push('短期均線多頭排列，趨勢偏多');
   else if (a.trend === 'bear') trendBullets.push('短期均線空頭排列，趨勢偏空');
   else trendBullets.push('多空訊號交織，目前處於盤整');
-  if (a.cross?.type === 'golden') trendBullets.push(`${a.cross.daysAgo === 0 ? '今日' : a.cross.daysAgo + ' 日前'}出現黃金交叉`);
-  else if (a.cross?.type === 'death') trendBullets.push(`${a.cross.daysAgo === 0 ? '今日' : a.cross.daysAgo + ' 日前'}出現死亡交叉`);
+  if (a.cross?.type === 'golden') trendBullets.push(`${a.cross.daysAgo === 0 ? '當日' : a.cross.daysAgo + ' 日前'}出現黃金交叉`);
+  else if (a.cross?.type === 'death') trendBullets.push(`${a.cross.daysAgo === 0 ? '當日' : a.cross.daysAgo + ' 日前'}出現死亡交叉`);
   if (a.rsi != null) {
     if (a.rsi > 70) trendBullets.push(`RSI ${a.rsi.toFixed(0)}，進入超買區，留意拉回風險`);
     else if (a.rsi < 30) trendBullets.push(`RSI ${a.rsi.toFixed(0)}，進入超賣區，留意反彈機會`);
@@ -870,7 +870,7 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
         </tr>
       </tbody>
     </table>
-    <p class="text-[10px] text-slate-500 mt-2">※ 價位為參考，依盤中走勢彈性調整</p>`;
+    <p class="text-[10px] text-slate-500 mt-2">※ 價位為參考，依次日盤中走勢彈性調整</p>`;
 
   return `
     <div class="bg-slate-900 text-slate-100 rounded-2xl shadow-xl overflow-hidden">
@@ -894,7 +894,7 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
               <div class="font-bold">${lastDate || '—'}</div>
             </div>
             <div>
-              <div class="text-slate-500">目前股價</div>
+              <div class="text-slate-500">最新收盤價</div>
               <div class="font-black text-base text-rose-400">${fmt(price)}</div>
             </div>
             <div>
@@ -925,7 +925,7 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
           '盈虧比建議 ≥ 1:2',
           '避免重大消息發布前後重倉操作'
         ]), 'cyan')}
-        <div class="sm:col-span-2">${panel('6', '進場計畫（範例）', entryTable, 'cyan')}</div>
+        <div class="sm:col-span-2">${panel('6', '進場計畫', entryTable, 'cyan')}</div>
         ${panel('7', '執行紀律', checks([
           '進場前確認條件達成',
           '嚴格執行停損停利',
@@ -1372,8 +1372,8 @@ function renderScreening(results) {
     box.innerHTML = `
       <div class="text-center py-4">
         <div class="text-3xl mb-2">😴</div>
-        <p class="text-sm text-slate-500 font-bold">今天沒有強烈進場訊號</p>
-        <p class="text-xs text-slate-400 mt-1">熱門 30 檔目前都不在「偏向買進」的技術面狀態，建議耐心等待。</p>
+        <p class="text-sm text-slate-500 font-bold">收盤後無強烈進場訊號</p>
+        <p class="text-xs text-slate-400 mt-1">熱門 30 檔依收盤價分析，目前都不在「偏向買進」的技術面狀態，建議耐心等待。</p>
       </div>`;
     return;
   }
