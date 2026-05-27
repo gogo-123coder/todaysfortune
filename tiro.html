@@ -1109,7 +1109,7 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
   if (chartInstance) chartInstance.destroy();
   const ctx = document.getElementById('priceChart').getContext('2d');
   const dates = timestamps.map(t => new Date(t * 1000));
-  const toXY = (arr) => arr.map((v, i) => v == null ? null : { x: dates[i], y: v });
+  const toXY = (arr) => arr.map((v, i) => ({ x: dates[i], y: v ?? null }));
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
