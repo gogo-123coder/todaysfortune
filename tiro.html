@@ -631,7 +631,7 @@ function calcEntryZones(analysis, levels) {
       tag: '✅ 首選',
       from: round2(baseLow),
       to: round2(baseHigh),
-      rationale: `等股價跌回${ma20 != null ? '均線附近或支撐區' : '支撐區'}後再買，勝算比較高，萬一繼續跌也有明確的賣點`,
+      rationale: `等股價跌回第一道防線（${fmt(L.s1)}）附近再買，勝算比較高；萬一繼續往下跌破第一道防線，就要賣出`,
     });
 
     // 順勢區：現價附近（非過熱時）
@@ -642,7 +642,7 @@ function calcEntryZones(analysis, levels) {
         tag: '⚠️ 積極型',
         from: round2(cur * 0.98),
         to: round2(cur * 1.01),
-        rationale: '接近目前收盤價買入，跟著上漲走，但如果跌破支撐要果斷賣出停損，不能捨不得',
+        rationale: `接近目前收盤價買入，跟著上漲走，但如果跌破第一道防線（${fmt(L.s1)}）就要果斷賣出，不能捨不得`,
       });
     }
 
@@ -672,7 +672,7 @@ function calcEntryZones(analysis, levels) {
         tag: '⚠️ 高風險',
         from: round2(L.strongS),
         to: round2(L.s1),
-        rationale: '跌很深可能會短暫反彈，如果真的要試，只能放一小部分的錢，並且要有心理準備可能繼續跌',
+        rationale: `跌很深可能會短暫反彈，如果真的要試，只能放一小部分的錢，而且跌破強力底部價（${fmt(L.strongS)}）就要立刻賣出，不能猶豫`,
       });
     }
   } else {
@@ -683,7 +683,7 @@ function calcEntryZones(analysis, levels) {
       tag: '✅ 區間下緣',
       from: round2(L.s1),
       to: round2(L.s1 * 1.03),
-      rationale: '在區間低點分批慢慢買，如果跌破這個位置就要賣出（停損），不要繼續撐著',
+      rationale: `在區間低點分批慢慢買，如果跌破第一道防線（${fmt(L.s1)}）就要賣出，不要繼續撐著`,
     });
     zones.push({
       level: 'avoid',
@@ -691,7 +691,7 @@ function calcEntryZones(analysis, levels) {
       tag: '📤 區間上緣',
       from: round2(L.r1 * 0.97),
       to: round2(L.r1),
-      rationale: '接近區間高點，可以考慮分批賣出，不要等到最高點才賣',
+      rationale: `接近第一道關卡（${fmt(L.r1)}）可以考慮分批賣出，不要等到最高點才賣`,
     });
   }
 
