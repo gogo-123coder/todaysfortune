@@ -6,7 +6,12 @@
 <title>台股收盤分析 — 新手看得懂版</title>
   <link rel="apple-touch-icon" href="./icon.png">
 <link rel="icon" type="image/png" href="./icon.png">
-<script src="https://cdn.tailwindcss.com"></script>
+<script>
+// 攔截 Tailwind CDN 的 production 警告（純個人工具，不影響功能）
+const _cw = console.warn.bind(console);
+console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.tailwindcss.com')) return; _cw(...a); };
+</script>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -1525,20 +1530,32 @@ function isTwNight() {
 }
 
 async function fetchUsQuote(sym) {
-  // Yahoo Finance v8 chart API，range=5d interval=1d 取最新日線
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=5d&includePrePost=false`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error('fetch fail');
-  const j = await r.json();
-  const res = j.chart?.result?.[0];
-  if (!res) throw new Error('no result');
-  const meta = res.meta;
-  const prev  = meta.chartPreviousClose ?? meta.previousClose;
-  const price = meta.regularMarketPrice;
-  const chg   = price - prev;
-  const chgPct = prev ? (chg / prev) * 100 : 0;
-  const mktState = meta.marketState; // 'PRE','REGULAR','POST','CLOSED'
-  return { label: null, sym, price, prev, chg, chgPct, mktState };
+  // Yahoo Finance 封鎖瀏覽器直接呼叫（CORS），依序嘗試多個免費 Proxy
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=5d&includePrePost=false`;
+  const sources = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
+    `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(yahooUrl)}`,
+  ];
+
+  let lastErr;
+  for (const url of sources) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) continue;
+      const j = await r.json();
+      const res = j.chart?.result?.[0];
+      if (!res) continue;
+      const meta = res.meta;
+      const prev  = meta.chartPreviousClose ?? meta.previousClose;
+      const price = meta.regularMarketPrice;
+      if (!price || !prev) continue;
+      const chg    = price - prev;
+      const chgPct = (chg / prev) * 100;
+      return { label: null, sym, price, prev, chg, chgPct, mktState: meta.marketState };
+    } catch(e) { lastErr = e; }
+  }
+  throw lastErr ?? new Error('all sources failed');
 }
 
 function usStateLabel(mktState) {
@@ -1570,11 +1587,20 @@ async function initUsMarket(force = false) {
   box.innerHTML = `<div class="text-sm text-slate-500 text-center py-3"><span class="loader inline-block align-middle mr-2"></span>正在載入美股資料…</div>`;
 
   try {
-    const results = await Promise.all(US_SYMBOLS.map(s => fetchUsQuote(s.sym).then(r => ({ ...r, label: s.label, weight: s.weight, color: s.color }))));
+    const results = await Promise.all(
+      US_SYMBOLS.map(s =>
+        fetchUsQuote(s.sym).then(r => ({ ...r, label: s.label, weight: s.weight, color: s.color }))
+      )
+    );
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: results })); } catch(e) {}
     renderUsMarket(results);
   } catch(e) {
-    box.innerHTML = `<p class="text-sm text-red-400 text-center py-2">美股資料載入失敗，請稍後再試。<br><span class="text-xs text-slate-400">（Yahoo Finance 偶爾會擋跨網域請求，重新整理看看）</span></p>`;
+    box.innerHTML = `
+      <div class="text-center py-4">
+        <p class="text-sm text-red-500 font-bold">美股資料載入失敗 😞</p>
+        <p class="text-xs text-slate-400 mt-2">免費 Proxy（allorigins、corsproxy.io）可能暫時無法服務，請稍後點「🔄 重新整理」再試。</p>
+        <p class="text-xs text-slate-400 mt-1">這不影響台股個股分析的功能。</p>
+      </div>`;
   }
 }
 
