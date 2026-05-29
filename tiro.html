@@ -52,18 +52,21 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
 
   <!-- Search -->
   <section class="bg-white rounded-2xl shadow-sm p-4 sm:p-5 mb-5">
-    <form id="searchForm" class="flex gap-2">
-      <input
-        id="stockInput"
-        type="text"
-        inputmode="numeric"
-        placeholder="輸入股票代號（例如 2330、0050、6488）"
-        class="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-base"
-        autocomplete="off"
-      >
-      <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition shadow-sm">
-        查詢
-      </button>
+    <form id="searchForm">
+      <div class="flex gap-2">
+        <input
+          id="stockInput"
+          type="text"
+          inputmode="numeric"
+          placeholder="輸入代號（如 2330）"
+          class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-base"
+          autocomplete="off"
+        >
+        <button type="submit" class="flex-shrink-0 px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition shadow-sm whitespace-nowrap">
+          🔍 查詢
+        </button>
+      </div>
+      <p class="text-xs text-slate-400 mt-1.5 sm:hidden">例如：台積電=2330、鴻海=2317、元大台灣50=0050</p>
     </form>
     <div class="flex flex-wrap gap-2 mt-3 text-xs">
       <span class="text-slate-500">熱門：</span>
@@ -1096,6 +1099,102 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
         <p class="text-xs text-slate-400 mt-2">
           🔴 漲（台股慣例）／🟢 跌・<span class="font-bold">金叉</span>=短線穿長線往上（好訊號）・<span class="font-bold">死叉</span>=短線穿長線往下（警示）・點任一列圖表上方會標示日期
         </p>
+
+        <!-- 指標解讀說明 -->
+        <div class="mt-4 border-t border-slate-100 pt-4 space-y-3">
+          <p class="text-xs font-bold text-slate-600">📖 這些數字怎麼看？（點開看說明）</p>
+
+          <!-- MA 均線 -->
+          <details class="group">
+            <summary class="cursor-pointer text-xs font-bold text-blue-600 hover:underline list-none flex items-center gap-1">
+              <span class="group-open:rotate-90 transition-transform inline-block">▶</span> MA5 / MA20 / MA60 均線怎麼看
+            </summary>
+            <div class="mt-2 bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-2">
+              <p>均線就是「過去幾天收盤價的平均值」，用來判斷目前漲跌的方向：</p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div class="bg-white rounded-lg p-2 border border-slate-100">
+                  <div class="font-bold text-slate-700 mb-1">MA5（5日）</div>
+                  <div>最近 1 週的平均，反應最快，股價很容易上下穿越它</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 border border-slate-100">
+                  <div class="font-bold text-slate-700 mb-1">MA20（20日）</div>
+                  <div>約 1 個月平均，是最重要的參考線，守住它代表走勢健康</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 border border-slate-100">
+                  <div class="font-bold text-slate-700 mb-1">MA60（60日）</div>
+                  <div>約 3 個月平均，代表中長期趨勢，跌破它要特別注意</div>
+                </div>
+              </div>
+              <div class="bg-blue-50 rounded-lg p-2 space-y-1">
+                <p class="font-bold text-blue-700">怎樣是好訊號？</p>
+                <p>✅ 股價 &gt; MA5 &gt; MA20 &gt; MA60，三線從下到上排列整齊 → 走勢最強，可以續抱</p>
+                <p>✅ MA5 由下穿越 MA20 往上（金叉）→ 短期轉強的訊號，可以留意買進機會</p>
+                <p>⚠️ 股價跌破 MA20 → 走勢開始轉弱，要提高警覺</p>
+                <p>🚨 MA5 由上穿越 MA20 往下（死叉）→ 短期轉弱，持股要考慮減少</p>
+              </div>
+            </div>
+          </details>
+
+          <!-- KD -->
+          <details class="group">
+            <summary class="cursor-pointer text-xs font-bold text-purple-600 hover:underline list-none flex items-center gap-1">
+              <span class="group-open:rotate-90 transition-transform inline-block">▶</span> K / D 值怎麼看
+            </summary>
+            <div class="mt-2 bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-2">
+              <p>K 和 D 都是 0～100 的數字，衡量「目前股價在最近高低點之間的位置」，偏高代表買氣旺，偏低代表賣壓大：</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div class="space-y-1.5">
+                  <div class="bg-red-50 rounded-lg p-2 border border-red-100">
+                    <div class="font-bold text-red-700">K &gt; D，而且兩者都往上 📈</div>
+                    <div class="mt-0.5">買氣正在增強！如果同時股價也在漲，可以續抱或分批加碼</div>
+                  </div>
+                  <div class="bg-orange-50 rounded-lg p-2 border border-orange-100">
+                    <div class="font-bold text-orange-700">K 和 D 都超過 80 ⚠️</div>
+                    <div class="mt-0.5">進入「過熱區」，短線漲太多，有回跌風險，考慮分批獲利了結</div>
+                  </div>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="bg-green-50 rounded-lg p-2 border border-green-100">
+                    <div class="font-bold text-green-700">K &lt; D，而且兩者都往下 📉</div>
+                    <div class="mt-0.5">賣壓正在增強，持股要小心，考慮先降低部位</div>
+                  </div>
+                  <div class="bg-blue-50 rounded-lg p-2 border border-blue-100">
+                    <div class="font-bold text-blue-700">K 和 D 都低於 20 🔍</div>
+                    <div class="mt-0.5">進入「超跌區」，可能有反彈機會，但要等 K 開始往上才行動</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- RSI -->
+          <details class="group">
+            <summary class="cursor-pointer text-xs font-bold text-amber-600 hover:underline list-none flex items-center gap-1">
+              <span class="group-open:rotate-90 transition-transform inline-block">▶</span> RSI 值怎麼看
+            </summary>
+            <div class="mt-2 bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-2">
+              <p>RSI（相對強弱指標）也是 0～100，衡量「這段時間漲的力道和跌的力道哪個比較強」：</p>
+              <div class="space-y-1.5">
+                <div class="flex items-center gap-2 bg-red-50 rounded-lg p-2 border border-red-100">
+                  <span class="text-xl">🔥</span>
+                  <div><span class="font-bold text-red-700">RSI &gt; 70：過熱，準備降溫</span><br>漲太多太快，短線可能快回跌。建議分批賣出、落袋為安，不要追高</div>
+                </div>
+                <div class="flex items-center gap-2 bg-amber-50 rounded-lg p-2 border border-amber-100">
+                  <span class="text-xl">✅</span>
+                  <div><span class="font-bold text-amber-700">RSI 50～70：強勢區，可以持有</span><br>走勢偏強，持有沒問題，但接近 70 時要開始留意出場時機</div>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-100 rounded-lg p-2">
+                  <span class="text-xl">😐</span>
+                  <div><span class="font-bold text-slate-700">RSI 30～50：弱勢區，保守觀察</span><br>走勢偏弱，不適合追買，等訊號轉強再說</div>
+                </div>
+                <div class="flex items-center gap-2 bg-blue-50 rounded-lg p-2 border border-blue-100">
+                  <span class="text-xl">💧</span>
+                  <div><span class="font-bold text-blue-700">RSI &lt; 30：超跌，可能有反彈</span><br>跌得很深，技術面有反彈機會，但要等真正止跌（出現紅 K 棒）再考慮買</div>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
       </div>
 
       <!-- Indicators -->
@@ -1115,6 +1214,96 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
           ${a.reasons.map(r => '<li class="flex items-start gap-2"><span class="text-blue-400">•</span><span>' + r + '</span></li>').join('')}
         </ul>
         <p class="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-100">綜合評分：${a.score >= 0 ? '+' : ''}${a.score}（正分越高越偏漲 / 負分越低越偏跌 / 接近 0 代表沒有明確方向）</p>
+
+        <!-- 持倉風險區間 -->
+        ${(() => {
+          const act = getAction(a);
+          // 判斷主力行為跡象（根據量、KD、RSI 組合判斷）
+          let positionRisk, positionColor, positionBg;
+          if (a.trend === 'bear' && a.zone === 'overbought') {
+            positionRisk = '⚠️ 小心主力出貨：股價反彈但走勢偏弱，反彈量若放大、RSI 沒繼續往上，可能是主力趁高出貨的跡象';
+            positionColor = 'text-orange-700'; positionBg = 'bg-orange-50 border-orange-200';
+          } else if (a.trend === 'bear' && a.score <= -4) {
+            positionRisk = '🚨 走勢明顯偏弱：均線和KD都往下，目前不建議持有，若手上有貨要考慮止損出場';
+            positionColor = 'text-red-700'; positionBg = 'bg-red-50 border-red-200';
+          } else if (a.trend === 'bull' && a.zone === 'oversold') {
+            positionRisk = '🔍 可能是主力洗盤：股價跌深但基本方向偏多，大戶可能在「嚇散散戶」後再拉起。量縮而非量爆是關鍵';
+            positionColor = 'text-blue-700'; positionBg = 'bg-blue-50 border-blue-200';
+          } else if (a.trend === 'bull' && a.score >= 4) {
+            positionRisk = '✅ 走勢強勁：均線、KD、RSI 多面向都偏多，目前持有風險相對低，注意 RSI 超過 70 後要開始分批獲利';
+            positionColor = 'text-emerald-700'; positionBg = 'bg-emerald-50 border-emerald-200';
+          } else {
+            positionRisk = '🟡 訊號混合：多空都有，目前沒有明確的主力動向，建議小量觀察，不宜大量建倉';
+            positionColor = 'text-amber-700'; positionBg = 'bg-amber-50 border-amber-200';
+          }
+
+          // 不賣 vs 賣掉的雙向評估
+          const close = a.close;
+          const L = { s1: (close * 0.95).toFixed(2), s2: (close * 0.89).toFixed(2), strongS: (close * 0.84).toFixed(2), r1: (close * 1.05).toFixed(2), r2: (close * 1.11).toFixed(2) };
+          const fmt2 = v => v != null ? v : '—';
+          let keepWorst, keepBest, sellWorst, sellBest;
+          if (a.trend === 'bull') {
+            keepWorst  = `若走勢反轉跌破第一道防線（${fmt2(L.s1)}），可能繼續跌到 ${fmt2(L.s2)} 甚至 ${fmt2(L.strongS)}，帳面損失擴大`;
+            keepBest   = `若走勢持續，可能挑戰第一道關卡（${fmt2(L.r1)}）甚至第二道（${fmt2(L.r2)}），報酬空間仍在`;
+            sellWorst  = `賣掉後若繼續大漲，可能少賺一大段，之後要追回來成本更高`;
+            sellBest   = `先落袋為安，若之後跌回來可以用更低的價格再買，減少風險`;
+          } else if (a.trend === 'bear') {
+            keepWorst  = `走勢偏弱，若繼續跌可能到 ${fmt2(L.s2)} 或 ${fmt2(L.strongS)}，目前沒有反彈訊號`;
+            keepBest   = `若突然出現止跌訊號（紅K棒+量縮），可以省去賣掉再買回的成本`;
+            sellWorst  = `賣掉後若短線快速反彈，會有「賣在低點」的遺憾`;
+            sellBest   = `先出場降低風險，等出現明確止跌訊號（如站回 ${fmt2(L.r1)}）再重新買回`;
+          } else {
+            keepWorst  = `走勢不明，若往下跌破 ${fmt2(L.s1)}，需要快速決策停損，否則可能越套越深`;
+            keepBest   = `若突破 ${fmt2(L.r1)} 往上，可以直接參與上漲，不用重新買進`;
+            sellWorst  = `賣掉後若突然轉強，錯失起漲的機會`;
+            sellBest   = `出場觀望，等方向明確後再決定，降低不必要的風險`;
+          }
+
+          return `
+        <div class="mt-4 pt-4 border-t border-slate-100 space-y-3">
+          <p class="text-xs font-bold text-slate-600">🎯 具體怎麼做？</p>
+
+          <!-- 持倉風險區間 -->
+          <div class="rounded-xl border ${positionBg} p-3">
+            <p class="text-xs font-bold ${positionColor} mb-1">📊 目前持倉風險評估</p>
+            <p class="text-xs ${positionColor}">${positionRisk}</p>
+          </div>
+
+          <!-- 雙向評估 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
+              <p class="text-xs font-bold text-emerald-700 mb-2">🤔 如果不賣，繼續持有…</p>
+              <div class="space-y-1.5 text-xs">
+                <div class="flex items-start gap-1.5">
+                  <span class="text-red-500 font-bold flex-shrink-0">最壞：</span>
+                  <span class="text-slate-600">${keepWorst}</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="text-emerald-600 font-bold flex-shrink-0">可能賺：</span>
+                  <span class="text-slate-600">${keepBest}</span>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-xl bg-rose-50 border border-rose-200 p-3">
+              <p class="text-xs font-bold text-rose-700 mb-2">🤔 如果賣掉，出場觀望…</p>
+              <div class="space-y-1.5 text-xs">
+                <div class="flex items-start gap-1.5">
+                  <span class="text-red-500 font-bold flex-shrink-0">最壞：</span>
+                  <span class="text-slate-600">${sellWorst}</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="text-emerald-600 font-bold flex-shrink-0">可能賺：</span>
+                  <span class="text-slate-600">${sellBest}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            💡 以上是依技術面的客觀分析，沒有標準答案。最終決定取決於你的買進成本、持有時間和可以承受多少虧損。
+          </p>
+        </div>`;
+        })()}
       </div>
     </div>
   `;
@@ -1672,23 +1861,24 @@ function renderUsMarket(data) {
     const barCls   = up ? 'bg-red-400' : 'bg-green-400';
     const unit     = INDEX_UNIT[d.sym] ?? '';
     return `
-      <div class="flex-1 min-w-0 rounded-2xl border-2 ${up ? 'border-red-100' : 'border-green-100'} p-4 flex flex-col gap-2">
-        <div class="flex items-center gap-2">
-          <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background:${d.color}"></span>
-          <span class="font-black text-slate-800 text-base leading-tight">${d.label}</span>
-        </div>
-        <div class="text-[11px] text-slate-400 leading-snug">${INDEX_DESC[d.sym] ?? ''}</div>
-        <div class="mt-1">
-          <div class="flex items-baseline gap-1">
-            <span class="font-black text-2xl text-slate-800 leading-none">${d.price?.toLocaleString('en-US', { maximumFractionDigits: 2 })}</span>
-            <span class="text-xs text-slate-400">${unit}（指數點數，不是股票價格）</span>
+      <div class="rounded-2xl border-2 ${up ? 'border-red-100' : 'border-green-100'} p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background:${d.color}"></span>
+              <span class="font-black text-slate-800 text-base leading-tight">${d.label}</span>
+            </div>
+            <div class="text-[11px] text-slate-400 leading-snug">${INDEX_DESC[d.sym] ?? ''}</div>
           </div>
-          <div class="flex items-center gap-2 mt-1.5">
-            <span class="px-2 py-0.5 rounded-lg font-black text-sm ${badgeCls}">${arrow} ${fmtChg(d.chgPct)}</span>
-            <span class="text-xs text-slate-400">今日漲跌幅</span>
+          <div class="text-right flex-shrink-0">
+            <div class="font-black text-xl text-slate-800 leading-none">${d.price?.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+            <div class="text-[10px] text-slate-400">點（指數，非股價）</div>
+            <div class="mt-1">
+              <span class="px-2 py-0.5 rounded-lg font-black text-sm ${badgeCls}">${arrow} ${fmtChg(d.chgPct)}</span>
+            </div>
           </div>
         </div>
-        <div class="mt-1">
+        <div class="mt-3">
           <div class="text-[10px] text-slate-400 mb-1">對台股影響力 ${Math.round(d.weight * 100)}%</div>
           <div class="w-full bg-slate-100 rounded-full h-1.5">
             <div class="${barCls} h-1.5 rounded-full transition-all" style="width:${barW}%"></div>
@@ -1706,8 +1896,8 @@ function renderUsMarket(data) {
         <span class="text-xs text-slate-400">查詢時間 ${updateTime}・Yahoo Finance 延遲約 15 分鐘</span>
       </div>
 
-      <!-- 三張指數卡片 -->
-      <div class="grid grid-cols-3 gap-3">${cards}</div>
+      <!-- 三張指數卡片：手機直排、桌機三欄 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">${cards}</div>
 
       <!-- 總結 -->
       <div class="mt-4 rounded-2xl border-2 ${impactBorder} ${impactBg} p-5">
