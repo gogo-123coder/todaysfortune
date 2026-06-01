@@ -57,8 +57,8 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
         <input
           id="stockInput"
           type="text"
-          inputmode="numeric"
-          placeholder="輸入代號（如 2330）"
+          inputmode="text"
+          placeholder="輸入代號（數字或英文，如 2330、00981A）"
           class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-base"
           autocomplete="off"
         >
@@ -66,7 +66,7 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
           🔍 查詢
         </button>
       </div>
-      <p class="text-xs text-slate-400 mt-1.5 sm:hidden">例如：台積電=2330、鴻海=2317、元大台灣50=0050</p>
+      <p class="text-xs text-slate-400 mt-1.5 sm:hidden">支援純數字（2330）或含英文（00981A）的代號</p>
     </form>
     <div class="flex flex-wrap gap-2 mt-3 text-xs">
       <span class="text-slate-500">熱門：</span>
@@ -1237,27 +1237,6 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
             positionColor = 'text-amber-700'; positionBg = 'bg-amber-50 border-amber-200';
           }
 
-          // 不賣 vs 賣掉的雙向評估
-          const close = a.close;
-          const L = { s1: (close * 0.95).toFixed(2), s2: (close * 0.89).toFixed(2), strongS: (close * 0.84).toFixed(2), r1: (close * 1.05).toFixed(2), r2: (close * 1.11).toFixed(2) };
-          const fmt2 = v => v != null ? v : '—';
-          let keepWorst, keepBest, sellWorst, sellBest;
-          if (a.trend === 'bull') {
-            keepWorst  = `若走勢反轉跌破第一道防線（${fmt2(L.s1)}），可能繼續跌到 ${fmt2(L.s2)} 甚至 ${fmt2(L.strongS)}，帳面損失擴大`;
-            keepBest   = `若走勢持續，可能挑戰第一道關卡（${fmt2(L.r1)}）甚至第二道（${fmt2(L.r2)}），報酬空間仍在`;
-            sellWorst  = `賣掉後若繼續大漲，可能少賺一大段，之後要追回來成本更高`;
-            sellBest   = `先落袋為安，若之後跌回來可以用更低的價格再買，減少風險`;
-          } else if (a.trend === 'bear') {
-            keepWorst  = `走勢偏弱，若繼續跌可能到 ${fmt2(L.s2)} 或 ${fmt2(L.strongS)}，目前沒有反彈訊號`;
-            keepBest   = `若突然出現止跌訊號（紅K棒+量縮），可以省去賣掉再買回的成本`;
-            sellWorst  = `賣掉後若短線快速反彈，會有「賣在低點」的遺憾`;
-            sellBest   = `先出場降低風險，等出現明確止跌訊號（如站回 ${fmt2(L.r1)}）再重新買回`;
-          } else {
-            keepWorst  = `走勢不明，若往下跌破 ${fmt2(L.s1)}，需要快速決策停損，否則可能越套越深`;
-            keepBest   = `若突破 ${fmt2(L.r1)} 往上，可以直接參與上漲，不用重新買進`;
-            sellWorst  = `賣掉後若突然轉強，錯失起漲的機會`;
-            sellBest   = `出場觀望，等方向明確後再決定，降低不必要的風險`;
-          }
 
           return `
         <div class="mt-4 pt-4 border-t border-slate-100 space-y-3">
@@ -1267,36 +1246,6 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
           <div class="rounded-xl border ${positionBg} p-3">
             <p class="text-xs font-bold ${positionColor} mb-1">📊 目前持倉風險評估</p>
             <p class="text-xs ${positionColor}">${positionRisk}</p>
-          </div>
-
-          <!-- 雙向評估 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-              <p class="text-xs font-bold text-emerald-700 mb-2">🤔 如果不賣，繼續持有…</p>
-              <div class="space-y-1.5 text-xs">
-                <div class="flex items-start gap-1.5">
-                  <span class="text-red-500 font-bold flex-shrink-0">最壞：</span>
-                  <span class="text-slate-600">${keepWorst}</span>
-                </div>
-                <div class="flex items-start gap-1.5">
-                  <span class="text-emerald-600 font-bold flex-shrink-0">可能賺：</span>
-                  <span class="text-slate-600">${keepBest}</span>
-                </div>
-              </div>
-            </div>
-            <div class="rounded-xl bg-rose-50 border border-rose-200 p-3">
-              <p class="text-xs font-bold text-rose-700 mb-2">🤔 如果賣掉，出場觀望…</p>
-              <div class="space-y-1.5 text-xs">
-                <div class="flex items-start gap-1.5">
-                  <span class="text-red-500 font-bold flex-shrink-0">最壞：</span>
-                  <span class="text-slate-600">${sellWorst}</span>
-                </div>
-                <div class="flex items-start gap-1.5">
-                  <span class="text-emerald-600 font-bold flex-shrink-0">可能賺：</span>
-                  <span class="text-slate-600">${sellBest}</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           <p class="text-[11px] text-slate-400 leading-relaxed">
