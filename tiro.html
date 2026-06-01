@@ -843,7 +843,7 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
       </div>`;
   }).join('');
 
-  // Panel 4: 交易策略
+  // Panel 4: 操作策略 — 做多直接顯示，做空收折
   const strategy = `
     <div class="space-y-3">
       <div class="bg-rose-900/30 border-l-2 border-rose-400 pl-3 py-2">
@@ -855,15 +855,20 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
           <div>停損點：跌破 <b>${fmt(L.s1)}</b> 就賣</div>
         </div>
       </div>
-      <div class="bg-emerald-900/30 border-l-2 border-emerald-400 pl-3 py-2">
-        <div class="text-emerald-400 font-bold mb-1">📉 做空（看跌）的做法</div>
-        <div class="text-xs space-y-0.5">
-          <div>前提：股價跌破 <b>${fmt(L.s1)}</b></div>
-          <div>進場時機：反彈到 <b>${fmt(L.s1)}</b> 附近又撐不住</div>
-          <div>獲利目標：<b>${fmt(L.s2)}</b> / <b>${fmt(L.strongS)}</b></div>
-          <div>停損點：站回 <b>${fmt(L.r1)}</b> 以上就停損</div>
+      <details class="group">
+        <summary class="cursor-pointer text-xs font-bold text-slate-400 hover:text-slate-200 list-none flex items-center gap-1.5 select-none">
+          <span class="group-open:rotate-90 transition-transform inline-block">▶</span>
+          📉 做空（看跌）的做法 <span class="font-normal text-slate-500">— 需要借券才能操作，新手可先跳過</span>
+        </summary>
+        <div class="mt-2 bg-emerald-900/30 border-l-2 border-emerald-400 pl-3 py-2">
+          <div class="text-xs space-y-0.5">
+            <div>前提：股價跌破 <b>${fmt(L.s1)}</b></div>
+            <div>進場時機：反彈到 <b>${fmt(L.s1)}</b> 附近又撐不住</div>
+            <div>獲利目標：<b>${fmt(L.s2)}</b> / <b>${fmt(L.strongS)}</b></div>
+            <div>停損點：站回 <b>${fmt(L.r1)}</b> 以上就停損</div>
+          </div>
         </div>
-      </div>
+      </details>
     </div>`;
 
   // Panel 6: 進場計畫表
@@ -1884,6 +1889,8 @@ function renderUsMarket(data) {
           <span class="font-bold text-slate-700">📅 ${sessionDateLabel}</span>
           <span class="text-slate-400">｜</span>
           <span>🕘 台灣時間：<b class="text-slate-700">${sessionRangeStr}</b></span>
+          <span class="text-slate-400">｜</span>
+          <span class="text-slate-500">凌晨 5 點美股收盤後再整理一次，最接近台股開盤前的狀況</span>
         </div>
       </div>
 
@@ -1908,15 +1915,6 @@ function renderUsMarket(data) {
         台股早上 9 點開盤時，美股期貨可能已經反轉。加上台灣自己的新聞、匯率、外資動向等，都會讓台股走出不同的方向。這裡的預估只是一個「開盤前的大方向參考」，不是保證。
       </div>
 
-      <!-- 數字說明 -->
-      <div class="mt-2 bg-slate-50 rounded-xl p-3 text-xs text-slate-400 leading-relaxed">
-        💡 <b class="text-slate-500">為什麼數字這麼大？</b>
-        上面三個是「<b class="text-slate-500">指數點數</b>」，不是股票的價格。S&P 500 指數現在約 6,000～8,000 點是正常的，跟 SPY 這類 ETF 的股價（約指數的 1/10）是不同的東西，但追蹤同一個市場。
-        <b>重點看漲跌百分比（%），不是看絕對數字大不大。</b>
-        <br><br>
-        📌 <b class="text-slate-500">怎麼用這個資訊？</b>
-        美股昨晚收盤後重新整理一次，凌晨 5 點美股收盤後再整理一次，這樣最接近台股開盤前的狀況。
-      </div>
 
     </div>`;
 }
