@@ -1797,20 +1797,39 @@ function renderUsMarket(data) {
 
   const stateLabel = usStateLabel(data[0]?.mktState);
 
-  // 從 API 回傳的 regularMarketTime（Unix 秒）換算成美東時間的交易日期
+  // 計算這筆資料對應的「台灣時間」美股交易時段
   const marketTimestamp = data[0]?.marketTime;
-  let tradingDateStr = '';
+  let sessionRangeStr = '', sessionDateLabel = '';
   if (marketTimestamp) {
-    const d = new Date(marketTimestamp * 1000);
-    // 轉成美東時間顯示（美股交易所所在地）
-    tradingDateStr = d.toLocaleDateString('zh-TW', {
-      timeZone: 'America/New_York',
-      year: 'numeric', month: '2-digit', day: '2-digit'
-    });
+    // 取得美東時區的交易日期字串（e.g. "2025-06-01"）
+    const etDateStr = new Date(marketTimestamp * 1000)
+      .toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // YYYY-MM-DD
+
+    // 算出美東時間目前的 UTC offset（EDT=-4, EST=-5）
+    const sampleDate = new Date(marketTimestamp * 1000);
+    const etHour  = parseInt(sampleDate.toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }));
+    const utcHour = sampleDate.getUTCHours();
+    const etOffsetHours = utcHour - etHour; // EDT=4, EST=5
+
+    // 用 UTC 時間建出當天 09:30 和 16:00 的 ET 時刻
+    const [y, m, d] = etDateStr.split('-').map(Number);
+    const openUTC  = Date.UTC(y, m - 1, d,  9 + etOffsetHours, 30); // 9:30 AM ET
+    const closeUTC = Date.UTC(y, m - 1, d, 16 + etOffsetHours,  0); // 4:00 PM ET
+
+    // 格式化成台灣時間顯示
+    const fmtTW = ts => new Date(ts).toLocaleString('zh-TW', {
+      timeZone: 'Asia/Taipei',
+      month: 'numeric', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).replace('/', '/').replace(' ', ' ');
+
+    const openTW  = fmtTW(openUTC);
+    const closeTW = fmtTW(closeUTC);
+    sessionRangeStr  = `${openTW} ～ ${closeTW}（台灣時間）`;
+    sessionDateLabel = `美股交易日 ${etDateStr.replace(/-/g, '/')}`;
   } else {
-    // fallback：用查詢當下的台灣日期
-    const now = new Date();
-    tradingDateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}（查詢時間）`;
+    sessionRangeStr  = '時間資料無法取得';
+    sessionDateLabel = '美股交易日不明';
   }
 
   // 三張大卡片
@@ -1853,12 +1872,16 @@ function renderUsMarket(data) {
     <div class="fade-in">
 
       <!-- 狀態列 -->
-      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div class="flex items-center gap-3 flex-wrap">
+      <div class="mb-4 space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-2">
           <span class="text-sm font-bold text-slate-600">${stateLabel}</span>
-          <span class="px-2.5 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">📅 美股交易日：${tradingDateStr}</span>
+          <span class="text-xs text-slate-400">資料約延遲 15 分鐘</span>
         </div>
-        <span class="text-xs text-slate-400">資料約延遲 15 分鐘</span>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span class="font-bold text-slate-700">📅 ${sessionDateLabel}</span>
+          <span class="text-slate-400">｜</span>
+          <span>🕘 台灣時間：<b class="text-slate-700">${sessionRangeStr}</b></span>
+        </div>
       </div>
 
       <!-- 三張指數卡片：手機直排、桌機三欄 -->
