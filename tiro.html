@@ -1690,7 +1690,7 @@ async function fetchUsQuote(sym) {
       if (!price || !prev) continue;
       const chg    = price - prev;
       const chgPct = (chg / prev) * 100;
-      return { label: null, sym, price, prev, chg, chgPct, mktState: meta.marketState };
+      return { label: null, sym, price, prev, chg, chgPct, mktState: meta.marketState, marketTime: meta.regularMarketTime };
     } catch(e) { lastErr = e; }
   }
   throw lastErr ?? new Error('all sources failed');
@@ -1796,9 +1796,22 @@ function renderUsMarket(data) {
   };
 
   const stateLabel = usStateLabel(data[0]?.mktState);
-  // 顯示「日期 + 時間」，讓使用者清楚這是哪天的資料
-  const now = new Date();
-  const updateTime = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  // 從 API 回傳的 regularMarketTime（Unix 秒）換算成美東時間的交易日期
+  const marketTimestamp = data[0]?.marketTime;
+  let tradingDateStr = '';
+  if (marketTimestamp) {
+    const d = new Date(marketTimestamp * 1000);
+    // 轉成美東時間顯示（美股交易所所在地）
+    tradingDateStr = d.toLocaleDateString('zh-TW', {
+      timeZone: 'America/New_York',
+      year: 'numeric', month: '2-digit', day: '2-digit'
+    });
+  } else {
+    // fallback：用查詢當下的台灣日期
+    const now = new Date();
+    tradingDateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}（查詢時間）`;
+  }
 
   // 三張大卡片
   const cards = data.map(d => {
@@ -1841,8 +1854,11 @@ function renderUsMarket(data) {
 
       <!-- 狀態列 -->
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <span class="text-sm font-bold text-slate-600">${stateLabel}</span>
-        <span class="text-xs text-slate-400">查詢時間 ${updateTime}・Yahoo Finance 延遲約 15 分鐘</span>
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-sm font-bold text-slate-600">${stateLabel}</span>
+          <span class="px-2.5 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">📅 美股交易日：${tradingDateStr}</span>
+        </div>
+        <span class="text-xs text-slate-400">資料約延遲 15 分鐘</span>
       </div>
 
       <!-- 三張指數卡片：手機直排、桌機三欄 -->
