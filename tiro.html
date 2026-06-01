@@ -54,19 +54,22 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
   <section class="bg-white rounded-2xl shadow-sm p-4 sm:p-5 mb-5">
     <form id="searchForm">
       <div class="flex gap-2">
-        <input
-          id="stockInput"
-          type="text"
-          inputmode="text"
-          placeholder="輸入代號（數字或英文，如 2330、00981A）"
-          class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-base"
-          autocomplete="off"
-        >
+        <div class="relative flex-1 min-w-0">
+          <input
+            id="stockInput"
+            type="text"
+            inputmode="text"
+            placeholder="輸入代號或名稱（如 2330 或 台積電）"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-base"
+            autocomplete="off"
+          >
+          <ul id="suggestionList" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto text-sm"></ul>
+        </div>
         <button type="submit" class="flex-shrink-0 px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition shadow-sm whitespace-nowrap">
           🔍 查詢
         </button>
       </div>
-      <p class="text-xs text-slate-400 mt-1.5 sm:hidden">支援純數字（2330）或含英文（00981A）的代號</p>
+      <p class="text-xs text-slate-400 mt-1.5 sm:hidden">支援代號（2330）、含英文代號（00981A）或公司名稱（台積電）</p>
     </form>
     <div class="flex flex-wrap gap-2 mt-3 text-xs">
       <span class="text-slate-500">熱門：</span>
@@ -1919,12 +1922,111 @@ function renderUsMarket(data) {
 }
 
 // ============================================================
+// 搜尋自動完成（代號 + 名稱雙向查詢）
+// ============================================================
+const inputEl  = document.getElementById('stockInput');
+const suggestEl = document.getElementById('suggestionList');
+
+function hideSuggestions() {
+  suggestEl.innerHTML = '';
+  suggestEl.classList.add('hidden');
+}
+
+function showSuggestions(items) {
+  if (!items.length) { hideSuggestions(); return; }
+  suggestEl.innerHTML = items.map(({ code, name }) => `
+    <li class="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0"
+        data-code="${code}">
+      <span class="font-bold text-slate-700 w-16 flex-shrink-0">${code}</span>
+      <span class="text-slate-500 truncate">${name}</span>
+    </li>`).join('');
+  suggestEl.classList.remove('hidden');
+  suggestEl.querySelectorAll('li').forEach(li => {
+    li.onmousedown = (e) => {   // mousedown 比 blur 早，避免點選時先觸發 blur 關掉清單
+      e.preventDefault();
+      const code = li.dataset.code;
+      inputEl.value = code;
+      hideSuggestions();
+      loadStock(code);
+    };
+  });
+}
+
+// 輸入時即時搜尋（代號前綴 or 名稱包含）
+inputEl.addEventListener('input', async () => {
+  const q = inputEl.value.trim();
+  if (!q) { hideSuggestions(); return; }
+  const map = await loadNameMap();
+  const entries = Object.entries(map); // [code, {name, industry}]
+  const ql = q.toLowerCase();
+  const results = entries
+    .filter(([code, { name }]) =>
+      code.toLowerCase().startsWith(ql) || name.includes(q)
+    )
+    .slice(0, 10)
+    .map(([code, { name }]) => ({ code, name }));
+  showSuggestions(results);
+});
+
+inputEl.addEventListener('blur', () => {
+  // 延遲一點讓 mousedown 先執行
+  setTimeout(hideSuggestions, 150);
+});
+
+inputEl.addEventListener('keydown', (e) => {
+  const items = suggestEl.querySelectorAll('li');
+  if (!items.length) return;
+  const active = suggestEl.querySelector('li.bg-blue-100');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const next = active ? active.nextElementSibling : items[0];
+    if (active) active.classList.remove('bg-blue-100');
+    if (next) next.classList.add('bg-blue-100');
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    const prev = active ? active.previousElementSibling : items[items.length - 1];
+    if (active) active.classList.remove('bg-blue-100');
+    if (prev) prev.classList.add('bg-blue-100');
+  } else if (e.key === 'Enter' && active) {
+    e.preventDefault();
+    const code = active.dataset.code;
+    inputEl.value = code;
+    hideSuggestions();
+    loadStock(code);
+  } else if (e.key === 'Escape') {
+    hideSuggestions();
+  }
+});
+
+// 送出時：如果輸入的不像代號，先嘗試用名稱反查代號
+async function resolveInput(raw) {
+  const q = raw.trim();
+  if (!q) return null;
+  // 純代號格式：全數字或數字+英文（如 2330、00981A）
+  if (/^[0-9A-Za-z]+$/.test(q)) return q.toUpperCase();
+  // 名稱：去 nameMap 找完全符合或包含的第一筆
+  const map = await loadNameMap();
+  const exact = Object.entries(map).find(([, { name }]) => name === q);
+  if (exact) return exact[0];
+  const partial = Object.entries(map).find(([, { name }]) => name.includes(q));
+  if (partial) return partial[0];
+  // 找不到就原樣送出，讓後端自己報錯
+  return q;
+}
+
+// ============================================================
 // 事件
 // ============================================================
-document.getElementById('searchForm').addEventListener('submit', (e) => {
+document.getElementById('searchForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const code = document.getElementById('stockInput').value.trim();
-  if (code) loadStock(code);
+  hideSuggestions();
+  const raw = inputEl.value.trim();
+  if (!raw) return;
+  const code = await resolveInput(raw);
+  if (code) {
+    inputEl.value = code;
+    loadStock(code);
+  }
 });
 
 document.querySelectorAll('.quick-btn').forEach(btn => {
