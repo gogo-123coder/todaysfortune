@@ -966,23 +966,16 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
           '獲利機會要比虧損風險至少大 2 倍以上才值得做',
           '重大新聞發布前後，不要把大量資金壓在同一支股票'
         ]), 'cyan')}
-        <div class="sm:col-span-2">${panel('6', '操作計畫（參考範例）', entryTable, 'cyan')}</div>
-        ${panel('7', '🔰 新手一定要記住', checks([
+        <div class="sm:col-span-2">${panel('6', '操作計畫（參考）', entryTable, 'cyan')}</div>
+        ${panel('7', '🔰 一定要記住', checks([
           '確認所有條件達成了再買，不要衝動',
           '設好停損點和停利點，到了就要賣',
-          '不要預設立場，跟著走勢走',
-          '每天回顧，看看自己哪裡可以做得更好',
-          '不要因為情緒（恐懼、貪婪）做決定'
+          '不要因為恐懼、貪婪做決定'
         ]), 'emerald')}
         ${panel('8', '接下來要觀察的事', checks(watchPoints), 'emerald')}
         ${panel('9', '補充說明', ul(noteHints), 'slate')}
       </div>
 
-      <!-- Core principles footer -->
-      <div class="mx-3 mb-3 sm:mx-5 sm:mb-5 py-2.5 px-4 bg-gradient-to-r from-amber-900/40 to-yellow-700/30 border border-amber-700/50 rounded-xl text-center">
-        <span class="text-amber-300 font-black text-sm">🎯 最重要的原則：</span>
-        <span class="text-amber-100 font-bold text-sm">跟著走勢走 · 設好停損點 · 不要梭哈 · 說到做到</span>
-      </div>
     </div>
   `;
 }
