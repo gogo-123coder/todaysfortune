@@ -113,7 +113,7 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
       </div>
     </form>
     <div class="flex flex-wrap gap-2 mt-3 text-xs">
-      <span class="text-slate-500">例如：</span>
+      <span class="text-slate-500">熱門：</span>
       <button class="quick-btn text-blue-600 hover:underline" data-code="2330">2330 台積電</button>
       <button class="quick-btn text-blue-600 hover:underline" data-code="2317">2317 鴻海</button>
       <button class="quick-btn text-blue-600 hover:underline" data-code="3481">3481 群創</button>
@@ -1124,9 +1124,9 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
                 <th class="px-2.5 py-2 text-left font-bold">日期</th>
                 <th class="px-2.5 py-2 text-right font-bold">收盤</th>
                 <th class="px-2.5 py-2 text-right font-bold">漲跌</th>
-                <th class="px-2.5 py-2 text-right font-bold">%</th>
-                <th class="px-2.5 py-2 text-right font-bold">成交量</th>
-                <th class="px-2.5 py-2 text-right font-bold">量增減</th>
+                <th class="px-2.5 py-2 text-right font-bold">漲跌幅%</th>
+                <th class="px-2.5 py-2 text-right font-bold">成交量(含零股)</th>
+                <th class="px-2.5 py-2 text-right font-bold">成交漲跌幅</th>
                 <th class="px-2.5 py-2 text-right font-bold">MA5</th>
                 <th class="px-2.5 py-2 text-right font-bold">MA20</th>
                 <th class="px-2.5 py-2 text-right font-bold">MA60</th>
