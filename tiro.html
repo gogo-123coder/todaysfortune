@@ -33,7 +33,19 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
 </head>
 <body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
 
-<div class="max-w-5xl mx-auto px-4 py-6 sm:py-10">
+<!-- Navigation Bar -->
+<nav class="w-full bg-white border-b border-slate-200 shadow-sm px-4 sm:px-8 py-2.5 flex gap-2 flex-wrap">
+  <a href="https://gogo-123coder.github.io/todaysfortune/tiro.html"
+     class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
+    🏠 回主畫面
+  </a>
+  <a href="https://gogo-123coder.github.io/todaysfortune/twetf.html"
+     class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm transition">
+    📊 台股ETF折溢價盤中監控
+  </a>
+</nav>
+
+<div class="w-full sm:max-w-full mx-auto px-4 sm:px-8 py-6 sm:py-10">
 
   <!-- Header -->
   <header class="mb-6 sm:mb-8">
@@ -81,6 +93,7 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
     </div>
   </section>
 
+	
   <!-- 本日適合進場 -->
   <section id="screenSection" class="mb-5">
     <div class="flex items-center justify-between mb-3">
@@ -90,19 +103,6 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
     <div id="screenContent" class="bg-white rounded-2xl shadow-sm p-4">
       <div class="text-sm text-slate-500 text-center py-3">
         <span class="loader inline-block align-middle mr-2"></span>正在整理熱門股票資料，請稍候…
-      </div>
-    </div>
-  </section>
-
-  <!-- 夜盤 / 美股參考 -->
-  <section id="usMarketSection" class="mb-5">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="text-sm font-bold text-slate-600">🌙 美股夜盤參考（預估對明日台股的影響）</h2>
-      <button id="refreshUsMarket" class="text-xs text-blue-500 hover:underline">🔄 重新整理</button>
-    </div>
-    <div id="usMarketContent" class="bg-white rounded-2xl shadow-sm p-4">
-      <div class="text-sm text-slate-500 text-center py-3">
-        <span class="loader inline-block align-middle mr-2"></span>正在載入美股資料…
       </div>
     </div>
   </section>
@@ -126,6 +126,19 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
     <p class="text-xs text-slate-400 mt-2">只要輸入 4 位數字代號就可以囉！（例如 2330、0050）</p>
   </section>
 
+	  <!-- 夜盤 / 美股參考 -->
+  <section id="usMarketSection" class="mb-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-bold text-slate-600">🌙 美股夜盤參考（預估對明日台股的影響）</h2>
+      <button id="refreshUsMarket" class="text-xs text-blue-500 hover:underline">🔄 重新整理</button>
+    </div>
+    <div id="usMarketContent" class="bg-white rounded-2xl shadow-sm p-4">
+      <div class="text-sm text-slate-500 text-center py-3">
+        <span class="loader inline-block align-middle mr-2"></span>正在載入美股資料…
+      </div>
+    </div>
+  </section>
+	
   <!-- Disclaimer -->
   <footer class="mt-10 text-center text-xs text-slate-400 leading-relaxed pb-6">
     <p class="font-bold text-slate-500">⚠️ 重要提醒</p>
