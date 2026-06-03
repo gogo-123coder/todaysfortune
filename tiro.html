@@ -39,12 +39,10 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
 <!-- Navigation Bar -->
 <nav class="w-full bg-white border-b border-slate-200 shadow-sm px-4 sm:px-8 py-2.5 flex gap-2 flex-wrap">
   <a href="https://gogo-123coder.github.io/todaysfortune/tiro.html"
-     onclick="event.preventDefault(); location.href=this.href;"
      class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
     🏠 回主畫面
   </a>
   <a href="https://gogo-123coder.github.io/todaysfortune/twetf.html"
-     onclick="event.preventDefault(); location.href=this.href;"
      class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm transition">
     📊 台股ETF折溢價盤中監控
   </a>
@@ -1100,6 +1098,8 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
                 <th class="px-2.5 py-2 text-right font-bold">收盤</th>
                 <th class="px-2.5 py-2 text-right font-bold">漲跌</th>
                 <th class="px-2.5 py-2 text-right font-bold">%</th>
+                <th class="px-2.5 py-2 text-right font-bold">成交量</th>
+                <th class="px-2.5 py-2 text-right font-bold">量增減</th>
                 <th class="px-2.5 py-2 text-right font-bold">MA5</th>
                 <th class="px-2.5 py-2 text-right font-bold">MA20</th>
                 <th class="px-2.5 py-2 text-right font-bold">MA60</th>
@@ -1281,14 +1281,30 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
   const ctx = document.getElementById('priceChart').getContext('2d');
   const dates = timestamps.map(t => new Date(t * 1000));
   const toXY = (arr) => arr.map((v, i) => ({ x: dates[i], y: v ?? null }));
+
+  // 成交量顏色：與前一日比較，增=紅、減=綠
+  const volColors = volumes.map((v, i) => {
+    if (i === 0 || volumes[i - 1] == null) return 'rgba(156,163,175,0.5)';
+    return v > volumes[i - 1] ? 'rgba(220,38,38,0.55)' : 'rgba(22,163,74,0.55)';
+  });
+
   chartInstance = new Chart(ctx, {
-    type: 'line',
+    type: 'bar',
     data: {
       datasets: [
-        { label: '收盤', data: toXY(closes), borderColor: '#1e40af', backgroundColor: 'rgba(30,64,175,0.05)', fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2, spanGaps: true },
-        { label: 'MA5',  data: toXY(a.ma5Arr),  borderColor: '#f59e0b', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [4,3], spanGaps: true },
-        { label: 'MA20', data: toXY(a.ma20Arr), borderColor: '#fa23de', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [4,3], spanGaps: true },
-        { label: 'MA60', data: toXY(a.ma60Arr), borderColor: '#0084ff', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [4,3], spanGaps: true },
+        {
+          type: 'bar',
+          label: '成交量',
+          data: toXY(volumes),
+          backgroundColor: volColors,
+          borderWidth: 0,
+          yAxisID: 'yVol',
+          order: 2,
+        },
+        { type: 'line', label: '收盤', data: toXY(closes), borderColor: '#1e40af', backgroundColor: 'rgba(30,64,175,0.05)', fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2, spanGaps: true, yAxisID: 'y', order: 1 },
+        { type: 'line', label: 'MA5',  data: toXY(a.ma5Arr),  borderColor: '#f59e0b', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [4,3], spanGaps: true, yAxisID: 'y', order: 1 },
+        { type: 'line', label: 'MA20', data: toXY(a.ma20Arr), borderColor: '#fa23de', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [4,3], spanGaps: true, yAxisID: 'y', order: 1 },
+        { type: 'line', label: 'MA60', data: toXY(a.ma60Arr), borderColor: '#0084ff', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [4,3], spanGaps: true, yAxisID: 'y', order: 1 },
       ]
     },
     options: {
@@ -1303,7 +1319,13 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
               const d = new Date(items[0].parsed.x);
               return d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
             },
-            label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(2)}`
+            label: (ctx) => {
+              if (ctx.dataset.label === '成交量') {
+                const v = ctx.parsed.y;
+                return `成交量: ${v >= 1000 ? (v/1000).toFixed(0)+'K' : v}`;
+              }
+              return `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(2)}`;
+            }
           }
         }
       },
@@ -1318,7 +1340,17 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
           ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 9 },
           grid: { color: 'rgba(0,0,0,0.04)' }
         },
-        y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } }
+        y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, position: 'left' },
+        yVol: {
+          position: 'right',
+          ticks: {
+            font: { size: 9 },
+            color: 'rgba(156,163,175,0.8)',
+            callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v
+          },
+          grid: { drawOnChartArea: false },
+          max: Math.max(...volumes.filter(v => v != null)) * 4,
+        }
       }
     }
   });
@@ -1360,12 +1392,23 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
       const fmt2 = v => v == null ? '<span class="text-slate-300">—</span>' : v.toFixed(2);
       const fmt0 = v => v == null ? '<span class="text-slate-300">—</span>' : v.toFixed(0);
 
+      // 成交量
+      const vol = volumes[i];
+      const prevVol = i > 0 ? volumes[i - 1] : null;
+      const volChg = (vol != null && prevVol != null && prevVol > 0) ? ((vol - prevVol) / prevVol) * 100 : null;
+      const volCls = volChg == null ? 'text-slate-400' : volChg > 0 ? 'text-red-600' : volChg < 0 ? 'text-green-600' : 'text-slate-400';
+      const volSign = volChg == null ? '' : volChg > 0 ? '▲' : volChg < 0 ? '▼' : '–';
+      const fmtVol = v => v == null ? '<span class="text-slate-300">—</span>' : (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v.toString());
+      const fmtVolChg = v => v == null ? '<span class="text-slate-300">—</span>' : `${volSign} ${Math.abs(v).toFixed(0)}%`;
+
       rows.push(`
         <tr class="row ${baseRowCls} cursor-pointer border-b border-slate-100 transition" data-ts="${timestamps[i]}" data-idx="${i}">
           <td class="px-2.5 py-2 font-mono text-slate-700">${dateStr}${isLatest ? ' <span class="text-[10px] text-yellow-600">(最新)</span>' : ''}</td>
           <td class="px-2.5 py-2 text-right font-bold text-slate-800">${fmt2(close)}</td>
           <td class="px-2.5 py-2 text-right ${chgCls}">${chgSign} ${Math.abs(chg).toFixed(2)}</td>
           <td class="px-2.5 py-2 text-right ${chgCls}">${chgSign} ${Math.abs(chgPct).toFixed(2)}%</td>
+          <td class="px-2.5 py-2 text-right text-slate-600">${fmtVol(vol)}</td>
+          <td class="px-2.5 py-2 text-right font-bold ${volCls}">${fmtVolChg(volChg)}</td>
           <td class="px-2.5 py-2 text-right text-slate-500">${fmt2(ma5)}</td>
           <td class="px-2.5 py-2 text-right text-slate-500">${fmt2(ma20)}</td>
           <td class="px-2.5 py-2 text-right text-slate-500">${fmt2(ma60)}</td>
