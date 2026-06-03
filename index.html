@@ -1217,7 +1217,7 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
         ${indicatorCard('MA20（月線）', fmt(a.ma20), a.close > a.ma20 ? '收盤站上均線 ↑' : '收盤跌破均線 ↓')}
         ${indicatorCard('MA60（季線）', fmt(a.ma60), a.close > a.ma60 ? '收盤站上均線 ↑' : '收盤跌破均線 ↓')}
         ${indicatorCard('KD（K / D）', fmt(a.k) + ' / ' + fmt(a.d), a.k > a.d ? '多頭鉤，買盤偏強 ↑' : '空頭鉤，賣壓偏重 ↓')}
-        ${indicatorCard('RSI(14)', fmt(a.rsi), a.rsi > 70 ? '超買區，注意回檔 ⚠️' : a.rsi < 30 ? '超賣區，留意反彈 ⚠️' : '中性區間'})
+        ${indicatorCard('RSI(14)', fmt(a.rsi), a.rsi > 70 ? '超買區，注意回檔' : a.rsi < 30 ? '超賣區，留意反彈' : '中性區間')}
       </div>
 
       <!-- Reasons -->
