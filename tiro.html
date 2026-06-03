@@ -39,10 +39,12 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
 <!-- Navigation Bar -->
 <nav class="w-full bg-white border-b border-slate-200 shadow-sm px-4 sm:px-8 py-2.5 flex gap-2 flex-wrap">
   <a href="https://gogo-123coder.github.io/todaysfortune/tiro.html"
+     onclick="event.preventDefault(); location.href=this.href;"
      class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
     🏠 回主畫面
   </a>
   <a href="https://gogo-123coder.github.io/todaysfortune/twetf.html"
+     onclick="event.preventDefault(); location.href=this.href;"
      class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm transition">
     📊 台股ETF折溢價盤中監控
   </a>
