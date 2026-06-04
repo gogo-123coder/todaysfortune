@@ -1312,6 +1312,14 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
   // 成交量換算成「萬」單位後再餵給圖表，讓 Y 軸刻度與表格顯示完全一致
   const volsWan = volumes.map(v => v == null ? null : v / 10000000);
 
+  // 股價 Y 軸範圍：從所有價格線取 min/max，讓曲線佔滿上方 70%；成交量柱佔底部 30%
+  const allPrices = [...closes, ...a.ma5Arr, ...a.ma20Arr, ...a.ma60Arr].filter(v => v != null && v > 0);
+  const priceMin = Math.min(...allPrices);
+  const priceMax = Math.max(...allPrices);
+  const yMax = priceMax * 1.04;
+  // 讓 priceMin 落在圖表高度約 32%，確保不與成交量柱重疊
+  const yMin = (priceMin - 0.32 * yMax) / 0.68;
+
   // 成交量顏色：與前一日比較，增=紅、減=綠
   const volColors = volumes.map((v, i) => {
     if (i === 0 || volumes[i - 1] == null) return 'rgba(156,163,175,0.5)';
@@ -1370,12 +1378,13 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
           ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 9 },
           grid: { color: 'rgba(0,0,0,0.04)' }
         },
-        y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, position: 'left' },
+        y: { min: yMin, max: yMax, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, position: 'left' },
         yVol: {
           position: 'right',
           ticks: { display: false },
           grid: { drawOnChartArea: false },
-          max: Math.max(...volsWan.filter(v => v != null)) * 4,
+          min: 0,
+          max: Math.max(...volsWan.filter(v => v != null)) * (1 / 0.28),
         }
       }
     }
