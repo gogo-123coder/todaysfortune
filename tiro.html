@@ -151,6 +151,8 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
     <div class="text-5xl mb-3">🔍</div>
     <p class="text-sm">最上方輸入股票後點查詢，這裡才有資料喔</p>
   </section>
+
+
 	
   <!-- Disclaimer -->
   <footer class="mt-10 text-center text-xs text-slate-400 leading-relaxed pb-6">
@@ -1729,6 +1731,236 @@ async function loadStock(code) {
     </div>`;
   }
 }
+
+// ============================================================
+// 美股夜盤參考
+// ============================================================
+
+// 台灣時間 21:30 ~ 隔日 05:00 為美股交易時段（夏令；冬令 22:30 ~ 06:00）
+// 不論是否在交易時段都顯示最新報價，並標示狀態
+const US_SYMBOLS = [
+  { sym: '%5EGSPC',  label: 'S&P 500',       weight: 0.40, color: '#3b82f6' },
+  { sym: '%5EIXIC',  label: 'Nasdaq',         weight: 0.35, color: '#8b5cf6' },
+  { sym: '%5ESOX',   label: '費城半導體',      weight: 0.25, color: '#f59e0b' },
+];
+
+// 台股對美股相關係數（簡化歷史估算）
+// S&P ×0.75 + Nasdaq ×0.85 + SOX ×0.70 → 再乘 weight → 合計預估影響
+const CORR = { '%5EGSPC': 0.75, '%5EIXIC': 0.85, '%5ESOX': 0.70 };
+
+function isTwNight() {
+  // 台灣時間判斷是否在美股交易時段（粗估 21:00 ~ 06:00）
+  const h = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' })).getHours();
+  return h >= 21 || h < 6;
+}
+
+async function fetchUsQuote(sym) {
+  // Yahoo Finance 封鎖瀏覽器直接呼叫（CORS），依序嘗試多個免費 Proxy
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=5d&includePrePost=false`;
+  const sources = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
+    `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(yahooUrl)}`,
+  ];
+
+  let lastErr;
+  for (const url of sources) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) continue;
+      const j = await r.json();
+      const res = j.chart?.result?.[0];
+      if (!res) continue;
+      const meta = res.meta;
+      const prev  = meta.chartPreviousClose ?? meta.previousClose;
+      const price = meta.regularMarketPrice;
+      if (!price || !prev) continue;
+      const chg    = price - prev;
+      const chgPct = (chg / prev) * 100;
+      return { label: null, sym, price, prev, chg, chgPct, mktState: meta.marketState, marketTime: meta.regularMarketTime };
+    } catch(e) { lastErr = e; }
+  }
+  throw lastErr ?? new Error('all sources failed');
+}
+
+function usStateLabel(mktState) {
+  if (!mktState) return '';
+  if (mktState === 'REGULAR') return '🟢 美股開盤中';
+  if (mktState === 'PRE')     return '🟡 美股盤前';
+  if (mktState === 'POST')    return '🟡 美股盤後';
+  return '⚫ 美股已收盤';
+}
+
+function fmtChg(v) {
+  const s = v >= 0 ? '+' : '';
+  return `${s}${v.toFixed(2)}%`;
+}
+
+async function initUsMarket(force = false) {
+  const box = document.getElementById('usMarketContent');
+  if (!box) return;
+
+  // 快取 5 分鐘
+  const CACHE_KEY = 'usMarketCache';
+  if (!force) {
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      if (c && Date.now() - c.ts < 5 * 60 * 1000) { renderUsMarket(c.data); return; }
+    } catch(e) {}
+  }
+
+  box.innerHTML = `<div class="text-sm text-slate-500 text-center py-3"><span class="loader inline-block align-middle mr-2"></span>正在載入美股資料…</div>`;
+
+  try {
+    const results = await Promise.all(
+      US_SYMBOLS.map(s =>
+        fetchUsQuote(s.sym).then(r => ({ ...r, label: s.label, weight: s.weight, color: s.color }))
+      )
+    );
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: results })); } catch(e) {}
+    renderUsMarket(results);
+  } catch(e) {
+    box.innerHTML = `
+      <div class="text-center py-4">
+        <p class="text-sm text-red-500 font-bold">美股資料載入失敗 😞</p>
+        <p class="text-xs text-slate-400 mt-2">免費 Proxy（allorigins、corsproxy.io）可能暫時無法服務，請稍後點「🔄 重新整理」再試。</p>
+        <p class="text-xs text-slate-400 mt-1">這不影響台股個股分析的功能。</p>
+      </div>`;
+  }
+}
+
+function renderUsMarket(data) {
+  const box = document.getElementById('usMarketContent');
+  if (!box || !data?.length) return;
+
+  // 加權預估台股開盤影響
+  let weightedImpact = 0;
+  data.forEach(d => {
+    const corr = CORR[d.sym] ?? 0.75;
+    weightedImpact += d.chgPct * d.weight * corr;
+  });
+
+
+
+  // 指數說明（新手版）
+  // 指數單位說明
+  const INDEX_UNIT = {
+    '%5EGSPC': '點',   // S&P 500 是指數，單位是「點」不是股價
+    '%5EIXIC': '點',
+    '%5ESOX':  '點',
+  };
+  const INDEX_DESC = {
+    '%5EGSPC': '追蹤美國最大 500 家公司，最能代表美國整體股市的健康狀況',
+    '%5EIXIC': '以美國科技公司為主，台積電、輝達等在這裡漲跌影響最大',
+    '%5ESOX':  '專門追蹤半導體晶片公司，台積電、聯電等台股科技類股最直接受影響',
+  };
+
+  const stateLabel = usStateLabel(data[0]?.mktState);
+
+  // 計算這筆資料對應的「台灣時間」美股交易時段
+  const marketTimestamp = data[0]?.marketTime;
+  let sessionRangeStr = '', sessionDateLabel = '';
+  if (marketTimestamp) {
+    // 取得美東時區的交易日期字串（e.g. "2025-06-01"）
+    const etDateStr = new Date(marketTimestamp * 1000)
+      .toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // YYYY-MM-DD
+
+    // 算出美東時間目前的 UTC offset（EDT=-4, EST=-5）
+    const sampleDate = new Date(marketTimestamp * 1000);
+    const etHour  = parseInt(sampleDate.toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }));
+    const utcHour = sampleDate.getUTCHours();
+    const etOffsetHours = utcHour - etHour; // EDT=4, EST=5
+
+    // 用 UTC 時間建出當天 09:30 和 16:00 的 ET 時刻
+    const [y, m, d] = etDateStr.split('-').map(Number);
+    const openUTC  = Date.UTC(y, m - 1, d,  9 + etOffsetHours, 30); // 9:30 AM ET
+    const closeUTC = Date.UTC(y, m - 1, d, 16 + etOffsetHours,  0); // 4:00 PM ET
+
+    // 格式化成台灣時間顯示
+    const fmtTW = ts => new Date(ts).toLocaleString('zh-TW', {
+      timeZone: 'Asia/Taipei',
+      month: 'numeric', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).replace('/', '/').replace(' ', ' ');
+
+    const openTW  = fmtTW(openUTC);
+    const closeTW = fmtTW(closeUTC);
+    sessionRangeStr  = `${openTW} ～ ${closeTW}（台灣時間）`;
+    sessionDateLabel = `美股交易日 ${etDateStr.replace(/-/g, '/')}`;
+  } else {
+    sessionRangeStr  = '時間資料無法取得';
+    sessionDateLabel = '美股交易日不明';
+  }
+
+  // 三張大卡片
+  const cards = data.map(d => {
+    const up = d.chgPct >= 0;
+    const chgCls   = up ? 'text-red-500'   : 'text-green-600';
+    const badgeCls = up ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
+    const arrow    = up ? '▲' : '▼';
+    const barW     = Math.min(Math.abs(d.chgPct) * 20, 100).toFixed(0);
+    const barCls   = up ? 'bg-red-400' : 'bg-green-400';
+    const unit     = INDEX_UNIT[d.sym] ?? '';
+    return `
+      <div class="rounded-2xl border-2 ${up ? 'border-red-100' : 'border-green-100'} p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background:${d.color}"></span>
+              <span class="font-black text-slate-800 text-base leading-tight">${d.label}</span>
+            </div>
+            <div class="text-[11px] text-slate-400 leading-snug">${INDEX_DESC[d.sym] ?? ''}</div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <div class="font-black text-xl text-slate-800 leading-none">${d.price?.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+            <div class="text-[10px] text-slate-400">點（指數，非股價）</div>
+            <div class="mt-1">
+              <span class="px-2 py-0.5 rounded-lg font-black text-sm ${badgeCls}">${arrow} ${fmtChg(d.chgPct)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 pt-3 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-500 tracking-wide">📊 對台股影響力</span>
+            <span class="text-3xl font-black leading-none" style="color:${d.color}">${Math.round(d.weight * 100)}%</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+            <div class="h-4 rounded-full transition-all duration-500" style="width:${Math.round(d.weight * 100)}%;background:${d.color};opacity:0.85"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div class="fade-in">
+
+      <!-- 狀態列 -->
+      <div class="mb-4 space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <span class="text-sm font-bold text-slate-600">${stateLabel}</span>
+          <span class="text-xs text-slate-400">資料約延遲 15 分鐘</span>
+        </div>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span class="font-bold text-slate-700">📅 ${sessionDateLabel}</span>
+          <span class="text-slate-400">｜</span>
+          <span>🕘 台灣時間：<b class="text-slate-700">${sessionRangeStr}</b></span>
+          <span class="text-slate-400">｜</span>
+          <span class="text-slate-500">凌晨 5 點美股收盤後再整理一次，最接近台股開盤前的狀況</span>
+        </div>
+      </div>
+
+      <!-- 三張指數卡片：手機直排、桌機三欄 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">${cards}</div>
+
+
+      <!-- ⚠️ 重要時間說明 -->
+      <div class="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 leading-relaxed">
+        ⏰ <b>這份資料是「昨晚到今早 5 點」的美股表現，不等於今天台股會照著走！</b><br>
+        台股早上 9 點開盤時，美股期貨可能已經反轉。加上台灣自己的新聞、匯率、外資動向等，都會讓台股走出不同的方向。這裡的預估只是一個「開盤前的大方向參考」，不是保證。
+      </div>
+
+
+    </div>`;
 }
 
 // ============================================================
