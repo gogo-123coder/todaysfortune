@@ -152,7 +152,18 @@ console.warn = (...a) => { if (typeof a[0] === 'string' && a[0].includes('cdn.ta
     <p class="text-sm">最上方輸入股票後點查詢，這裡才有資料喔</p>
   </section>
 
-
+	  <!-- 夜盤 / 美股參考 -->
+  <section id="usMarketSection" class="mb-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-bold text-slate-600">🌙 美股夜盤參考（猜測對明日台股的影響）</h2>
+      <button id="refreshUsMarket" class="text-xs text-blue-500 hover:underline">🔄 重新整理</button>
+    </div>
+    <div id="usMarketContent" class="bg-white rounded-2xl shadow-sm p-4">
+      <div class="text-sm text-slate-500 text-center py-3">
+        <span class="loader inline-block align-middle mr-2"></span>正在載入美股資料…
+      </div>
+    </div>
+  </section>
 	
   <!-- Disclaimer -->
   <footer class="mt-10 text-center text-xs text-slate-400 leading-relaxed pb-6">
