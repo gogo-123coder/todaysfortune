@@ -1373,11 +1373,7 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
         y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, position: 'left' },
         yVol: {
           position: 'right',
-          ticks: {
-            font: { size: 9 },
-            color: 'rgba(156,163,175,0.8)',
-            callback: v => v.toFixed(1) + '萬'
-          },
+          ticks: { display: false },
           grid: { drawOnChartArea: false },
           max: Math.max(...volsWan.filter(v => v != null)) * 4,
         }
@@ -1428,7 +1424,12 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
       const volChg = (vol != null && prevVol != null && prevVol > 0) ? ((vol - prevVol) / prevVol) * 100 : null;
       const volCls = volChg == null ? 'text-slate-400' : volChg > 0 ? 'text-red-600' : volChg < 0 ? 'text-green-600' : 'text-slate-400';
       const volSign = volChg == null ? '' : volChg > 0 ? '▲' : volChg < 0 ? '▼' : '–';
-      const fmtVol = v => v == null ? '<span class="text-slate-300">—</span>' : (v / 10000000).toFixed(2) + '萬';
+      const fmtVol = v => {
+        if (v == null) return '<span class="text-slate-300">—</span>';
+        const wan = v / 10000000;
+        if (wan < 1) return Math.round(v / 1000).toLocaleString();
+        return wan.toFixed(2) + '萬';
+      };
       const fmtVolChg = v => v == null ? '<span class="text-slate-300">—</span>' : `${volSign} ${Math.abs(v).toFixed(0)}%`;
 
       rows.push(`
