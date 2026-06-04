@@ -1309,6 +1309,9 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
   const dates = timestamps.map(t => new Date(t * 1000));
   const toXY = (arr) => arr.map((v, i) => ({ x: dates[i], y: v ?? null }));
 
+  // 成交量換算成「萬」單位後再餵給圖表，讓 Y 軸刻度與表格顯示完全一致
+  const volsWan = volumes.map(v => v == null ? null : v / 10000000);
+
   // 成交量顏色：與前一日比較，增=紅、減=綠
   const volColors = volumes.map((v, i) => {
     if (i === 0 || volumes[i - 1] == null) return 'rgba(156,163,175,0.5)';
@@ -1322,7 +1325,7 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
         {
           type: 'bar',
           label: '成交量',
-          data: toXY(volumes),
+          data: toXY(volsWan),
           backgroundColor: volColors,
           borderWidth: 0,
           yAxisID: 'yVol',
@@ -1349,7 +1352,7 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
             label: (ctx) => {
               if (ctx.dataset.label === '成交量') {
                 const v = ctx.parsed.y;
-                return `成交量: ${(v / 10000000).toFixed(2)}萬張`;
+                return `成交量: ${v.toFixed(2)}萬`;
               }
               return `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(2)}`;
             }
@@ -1373,10 +1376,10 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
           ticks: {
             font: { size: 9 },
             color: 'rgba(156,163,175,0.8)',
-            callback: v => (v / 10000000).toFixed(1) + '萬張'
+            callback: v => v.toFixed(1) + '萬'
           },
           grid: { drawOnChartArea: false },
-          max: Math.max(...volumes.filter(v => v != null)) * 4,
+          max: Math.max(...volsWan.filter(v => v != null)) * 4,
         }
       }
     }
@@ -1425,7 +1428,7 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
       const volChg = (vol != null && prevVol != null && prevVol > 0) ? ((vol - prevVol) / prevVol) * 100 : null;
       const volCls = volChg == null ? 'text-slate-400' : volChg > 0 ? 'text-red-600' : volChg < 0 ? 'text-green-600' : 'text-slate-400';
       const volSign = volChg == null ? '' : volChg > 0 ? '▲' : volChg < 0 ? '▼' : '–';
-      const fmtVol = v => v == null ? '<span class="text-slate-300">—</span>' : (v / 10000000).toFixed(2) + '萬張';
+      const fmtVol = v => v == null ? '<span class="text-slate-300">—</span>' : (v / 10000000).toFixed(2) + '萬';
       const fmtVolChg = v => v == null ? '<span class="text-slate-300">—</span>' : `${volSign} ${Math.abs(v).toFixed(0)}%`;
 
       rows.push(`
