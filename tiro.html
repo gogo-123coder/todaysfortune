@@ -1901,10 +1901,10 @@ function renderUsMarket(payload) {
     const dir = est >= 0 ? '上漲' : '下跌';
     const lvl = abs >= 1.0 ? '大幅' : abs >= 0.5 ? '明顯' : abs >= 0.2 ? '小幅' : '輕微';
     const soxNote = soxPct != null && Math.abs(soxPct) >= 1.5
-      ? `費城半導體${soxPct >= 0 ? '強漲' : '重跌'} ${Math.abs(soxPct).toFixed(1)}%，台積電、聯發科今天開盤要特別注意。` : '';
+      ? `費城半導體${soxPct >= 0 ? '強漲' : '重跌'} ${Math.abs(soxPct).toFixed(1)}%，台積電、聯發科今天開盤要特別注意。` : '';<br>
     const divNote = spPct != null && nqPct != null && Math.sign(spPct) !== Math.sign(nqPct)
       ? '三大指數漲跌不一，美股走勢分歧，大盤方向不明確。' : '';
-    return `預估台股大盤今天${lvl}${dir}約 ${est >= 0 ? '+' : ''}${est.toFixed(2)}%。${soxNote}${divNote}`;
+    return `預估台股大盤今天${lvl}${dir}約 ${est >= 0 ? '+' : ''}${est.toFixed(2)}%。<br>${soxNote}${divNote}`;
   }
 
   // 結論二：OTC（扣台積電）預估 + 解讀
@@ -1923,7 +1923,7 @@ function renderUsMarket(payload) {
     } else if (otcEst > taiexEst + 0.3) {
       advice = '💡 OTC 中小型股預估比大盤強，今天非 AI 題材股可能有自己的行情。';
     } else {
-      advice = `預估 OTC ${lvl}${dir}約 ${otcEst >= 0 ? '+' : ''}${otcEst.toFixed(2)}%，與大盤走勢相近，沒有特別分歧。`;
+      advice = `預估 OTC ${lvl}${dir}約 ${otcEst >= 0 ? '+' : ''}${otcEst.toFixed(2)}%，<br>與大盤走勢相近，沒有特別分歧。`;
     }
     return advice;
   }
