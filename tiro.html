@@ -1749,7 +1749,7 @@ async function loadStock(code) {
 
 const US_SYMBOLS = [
   { sym: '^GSPC', label: 'S&P 500',    color: '#3b82f6' },
-  { sym: '^IXIC', label: 'NASDAQ那斯達克',     color: '#8b5cf6' },
+  { sym: '^IXIC', label: 'NASDAQ那斯達克', color: '#8b5cf6' },
   { sym: '^SOX',  label: '費城半導體',  color: '#f59e0b' },
 ];
 
@@ -1953,8 +1953,8 @@ function renderUsMarket(payload) {
       else diffNote = `<div style="margin-top:8px;font-size:12px;color:#64748b">昨天大盤和 OTC 走勢差不多，沒有明顯分歧</div>`;
     }
     twActualHTML = `
-      <div style="background:rgba(232,209,182,0.35);border-radius:10px;padding:12px 14px;margin-top:4px;border:1px solid rgba(188,137,9,0.18)">
-        <div style="font-size:11px;color:#637d92;font-weight:600;margin-bottom:6px;letter-spacing:0.01em">📅 昨日台股實際收盤（${twData.taiex?.date ?? twData.otc?.date ?? ''}）</div>
+      <div style="background:rgba(121,147,173,0.15);border-radius:10px;padding:12px 14px;margin-top:4px;border:1px solid rgba(121,147,173,0.30)">
+        <div style="font-size:11px;color:#4d6b8a;font-weight:600;margin-bottom:6px;letter-spacing:0.01em">📅 昨日台股實際收盤（${twData.taiex?.date ?? twData.otc?.date ?? ''}）</div>
         ${taiexRow}${otcRow}${diffNote}
       </div>`;
   }
@@ -1968,9 +1968,9 @@ function renderUsMarket(payload) {
     const borderR   = i < data.length - 1 ? 'border-right:1px solid #e2e8f0;' : '';
     return `
       <div style="flex:1;min-width:0;${borderR}padding:12px 14px">
-        <div style="font-size:11px;color:#64748b;font-weight:600;margin-bottom:3px">${d.label}</div>
-        <div style="font-size:19px;font-weight:900;color:#1e293b;letter-spacing:-0.5px">${d.price.toLocaleString('en-US',{maximumFractionDigits:2})}</div>
-        <div style="font-size:12px;font-weight:700;color:${lineColor};margin-top:2px">${pctTxt}</div>
+        <div style="font-size:15px;color:#1e293b;font-weight:700;margin-bottom:4px;line-height:1.3">${d.label}</div>
+        <div style="font-size:13px;font-weight:400;color:#94a3b8;letter-spacing:0px;margin-bottom:2px">${d.price.toLocaleString('en-US',{maximumFractionDigits:2})}</div>
+        <div style="font-size:19px;font-weight:800;color:${lineColor};margin-top:2px">${pctTxt}</div>
         <div style="margin-top:6px">${spark}</div>
       </div>`;
   }).join('');
@@ -1994,6 +1994,17 @@ function renderUsMarket(payload) {
   // 色票：#132442 深海軍藍 / #1a3a63 深藍 / #637d92 鋼藍 / #bc8909 芥末金 / #e8d1b6 米白
   const taiexColor = '#8a162c';
   const otcColor   = '#8a162c';
+
+  // 依句點斷行，轉成帶圓點的條列
+  const sentenceLines = (text, color) => {
+    const parts = text.split('。').map(s => s.trim()).filter(Boolean);
+    if (parts.length <= 1) return text;
+    return parts.map(s => `
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:4px 0">
+        <span style="flex-shrink:0;width:7px;height:7px;border-radius:50%;background:${color};margin-top:7px;opacity:0.7"></span>
+        <span>${s}。</span>
+      </div>`).join('');
+  };
 
   box.innerHTML = `
     <div class="fade-in">
@@ -2028,37 +2039,37 @@ function renderUsMarket(payload) {
       </div>
 
       <!-- ══ 區塊一：對台股大盤影響 ══ -->
-      <div style="border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 4px 18px rgba(19,36,66,0.10)">
+      <div style="border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 4px 18px rgba(173,137,121,0.18)">
         <!-- 標題列 -->
-        <div style="background:#132442;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="background:#7a4f43;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:0.01em;display:flex;align-items:center;gap:7px">
             <span style="font-size:15px">📈</span>
             區塊一：美股對台股大盤的影響（含台積電）
           </div>
-          <span style="font-size:10px;font-weight:600;color:#132442;background:#e8d1b6;border-radius:20px;padding:3px 10px;letter-spacing:0.02em">迴歸係數估算</span>
+          <span style="font-size:10px;font-weight:600;color:#7a4f43;background:#f5e8e4;border-radius:20px;padding:3px 10px;letter-spacing:0.02em">迴歸係數估算</span>
         </div>
         <!-- 內容區 -->
-        <div style="background:linear-gradient(160deg,#f4f7fa 0%,#edf2f7 100%);padding:16px 18px">
-          <div style="font-size:17.5px;font-weight:400;color:${taiexColor};line-height:1.7;margin-bottom:14px">${taiexCmt}</div>
-          <div style="font-size:11.5px;color:#132442;background:#e8d1b6;border-radius:10px;padding:10px 14px;border-left:4px solid #bc8909;line-height:1.65">
+        <div style="background:linear-gradient(160deg,#f7f0ed 0%,#f0e6e1 100%);padding:16px 18px">
+          <div style="font-size:17.5px;font-weight:400;color:${taiexColor};line-height:1.7;margin-bottom:14px">${sentenceLines(taiexCmt, taiexColor)}</div>
+          <div style="font-size:11.5px;color:#5c3a30;background:rgba(173,137,121,0.20);border-radius:10px;padding:10px 14px;border-left:4px solid #ad8979;line-height:1.65">
             💡 這個數字怎麼算？用過去六年台股與美股的歷史資料做統計回歸，算出美股漲 1% 時台股平均跟漲多少，再乘以今天各指數的實際漲跌幅加總。不是拍腦袋，但不保證精準。
           </div>
         </div>
       </div>
 
       <!-- ══ 區塊二：OTC 中小型股體質 ══ -->
-      <div style="border-radius:16px;overflow:hidden;margin-bottom:10px;box-shadow:0 4px 18px rgba(99,125,146,0.12)">
+      <div style="border-radius:16px;overflow:hidden;margin-bottom:10px;box-shadow:0 4px 18px rgba(121,147,173,0.18)">
         <!-- 標題列 -->
-        <div style="background:#1a3a63;padding:13px 18px;display:flex;align-items:center;gap:7px">
+        <div style="background:#4d6b8a;padding:13px 18px;display:flex;align-items:center;gap:7px">
           <span style="font-size:15px">🏪</span>
           <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:0.01em">
             區塊二：扣除台積電後——中小型股 / OTC 市場體質
           </div>
         </div>
         <!-- 內容區 -->
-        <div style="background:linear-gradient(160deg,#fdf9f4 0%,#f7f0e6 100%);padding:16px 18px">
-          <div style="font-size:17.5px;font-weight:400;color:${otcColor};line-height:1.7;margin-bottom:14px">${otcCmt}</div>
-          <div style="font-size:11.5px;color:#132442;background:#e8d1b6;border-radius:10px;padding:10px 14px;border-left:4px solid #637d92;line-height:1.65;margin-bottom:10px">
+        <div style="background:linear-gradient(160deg,#edf3f8 0%,#e2ecf5 100%);padding:16px 18px">
+          <div style="font-size:17.5px;font-weight:400;color:${otcColor};line-height:1.7;margin-bottom:14px">${sentenceLines(otcCmt, otcColor)}</div>
+          <div style="font-size:11.5px;color:#2c4a62;background:rgba(121,147,173,0.18);border-radius:10px;padding:10px 14px;border-left:4px solid #7993ad;line-height:1.65;margin-bottom:10px">
             💡 台股加權指數裡台積電佔約 30%，大盤跌不代表中小型股也跌。OTC 櫃買指數幾乎沒有台積電，最能反映中小型、生技、傳產題材股的真實走勢。
           </div>
           ${twActualHTML}
