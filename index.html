@@ -1929,6 +1929,18 @@ function renderUsMarket(data) {
         📊 對次日台股影響：${twImpactLine}　<span class="font-normal text-xs opacity-75">（加權預估 ${fmtChg(weightedImpact)}）</span>
       </div>
 
+
+      <!-- 影響評語 -->
+<div class="mb-4 bg-blue-50 border-2 border-blue-300 rounded-2xl p-4 leading-relaxed">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xl">📢</span>
+          <span class="text-base font-black text-blue-800">對明日台股影響評估：</span>
+        </div>
+        <p class="text-sm text-blue-900 font-medium leading-loose">${commentary}</p>
+      </div>
+
+
+
       <!-- Header 卡片（仿圖片頂部三欄） -->
       <div class="flex divide-x divide-slate-100 bg-slate-50 rounded-2xl border border-slate-200 mb-1">
         ${headerCards}
