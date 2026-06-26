@@ -1005,62 +1005,44 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
       </div>`;
   }).join('');
 
-  // Panel 4: 操作策略 — 做多直接顯示，做空收折
+  // Panel 4: 操作策略 + 計畫（整合版）
   const strategy = `
     <div class="space-y-3">
-      <div class="bg-rose-900/30 border-l-2 border-rose-400 pl-3 py-2">
-        <div class="text-rose-400 font-bold mb-1">📈 做多（看漲）的做法</div>
-        <div class="text-xs space-y-0.5">
-          <div>前提：股價守住第一道防線 <b>${fmt(L.s1)}</b> 以上</div>
-          <div>買進時機：回跌到 <b>${fmt(L.s1)}～${fmt(price)}</b> 附近（現價參考）</div>
-          <div>獲利目標：<b>${fmt(L.r1)}</b> / <b>${fmt(L.r2)}</b></div>
-          <div>停損點：跌破 <b>${fmt(L.s1)}</b> 就賣</div>
-        </div>
+      <!-- 做多 -->
+      <div class="bg-rose-900/30 border-l-2 border-rose-400 pl-3 py-2 rounded-r">
+        <div class="text-rose-400 font-bold text-xs mb-2">📈 看漲（做多）</div>
+        <table class="w-full text-[11px]">
+          <tbody class="space-y-0.5">
+            <tr><td class="text-slate-400 w-16 py-0.5">前提</td><td class="font-medium">股價守住第一道防線 <b class="text-slate-100">${fmt(L.s1)}</b> 以上</td></tr>
+            <tr><td class="text-slate-400 py-0.5">買進區間</td><td class="font-mono font-black text-slate-100">${fmt(L.s1)} ～ ${fmt(price)}</td></tr>
+            <tr><td class="text-slate-400 py-0.5">停損點</td><td class="font-mono text-emerald-400 font-black">跌破 ${fmt(L.s1)} 就賣</td></tr>
+            <tr><td class="text-slate-400 py-0.5">目標①</td><td class="font-mono text-rose-300">${fmt(L.r1)}</td></tr>
+            <tr><td class="text-slate-400 py-0.5">目標②</td><td class="font-mono text-rose-300">${fmt(L.r2)}</td></tr>
+            <tr><td class="text-slate-400 py-0.5">賺賠比</td><td class="font-bold">≥ 1:2</td></tr>
+          </tbody>
+        </table>
       </div>
+      <!-- 做空（折疊） -->
       <details class="group">
         <summary class="cursor-pointer text-xs font-bold text-slate-400 hover:text-slate-200 list-none flex items-center gap-1.5 select-none">
           <span class="group-open:rotate-90 transition-transform inline-block">▶</span>
-          📉 做空（看跌）的做法 <span class="font-normal text-slate-500">— 需要借券才能操作，新手可先跳過</span>
+          📉 看跌（做空）<span class="font-normal text-slate-500 ml-1">— 需借券，新手可跳過</span>
         </summary>
-        <div class="mt-2 bg-emerald-900/30 border-l-2 border-emerald-400 pl-3 py-2">
-          <div class="text-xs space-y-0.5">
-            <div>前提：股價跌破 <b>${fmt(L.s1)}</b></div>
-            <div>進場時機：反彈到 <b>${fmt(L.s1)}</b> 附近又撐不住</div>
-            <div>獲利目標：<b>${fmt(L.s2)}</b> / <b>${fmt(L.strongS)}</b></div>
-            <div>停損點：站回 <b>${fmt(L.r1)}</b> 以上就停損</div>
-          </div>
+        <div class="mt-2 bg-emerald-900/30 border-l-2 border-emerald-400 pl-3 py-2 rounded-r">
+          <table class="w-full text-[11px]">
+            <tbody>
+              <tr><td class="text-slate-400 w-16 py-0.5">前提</td><td class="font-medium">股價跌破 <b class="text-slate-100">${fmt(L.s1)}</b></td></tr>
+              <tr><td class="text-slate-400 py-0.5">進場區間</td><td class="font-mono font-black text-slate-100">${(L.s1 * 0.97).toFixed(2)} ～ ${fmt(L.s1)}</td></tr>
+              <tr><td class="text-slate-400 py-0.5">停損點</td><td class="font-mono text-rose-400 font-black">站回 ${fmt(L.r1)} 就停損</td></tr>
+              <tr><td class="text-slate-400 py-0.5">目標①</td><td class="font-mono text-emerald-300">${fmt(L.s2)}</td></tr>
+              <tr><td class="text-slate-400 py-0.5">目標②</td><td class="font-mono text-emerald-300">${fmt(L.strongS)}</td></tr>
+              <tr><td class="text-slate-400 py-0.5">賺賠比</td><td class="font-bold">≥ 1:2</td></tr>
+            </tbody>
+          </table>
         </div>
       </details>
+      <p class="text-[10px] text-slate-500">※ 僅供參考，實際操作請依盤中走勢靈活調整</p>
     </div>`;
-
-  // Panel 6: 進場計畫表
-  const entryTable = `
-    <table class="w-full text-[11px] sm:text-xs">
-      <thead class="text-slate-400 border-b border-slate-700">
-        <tr><th class="text-left py-1">方向</th><th>什麼時候買/賣</th><th>參考價格</th><th>停損點</th><th>目標1</th><th>目標2</th><th>賺賠比</th></tr>
-      </thead>
-      <tbody>
-        <tr class="border-b border-slate-700/40">
-          <td class="py-1.5 text-rose-400 font-bold">看漲</td>
-          <td class="text-center">守住${fmt(L.s1)}後回跌</td>
-          <td class="text-center font-mono">${fmt(L.s1)}～${fmt(price)}</td>
-          <td class="text-center font-mono text-emerald-400">${fmt(L.s1)}</td>
-          <td class="text-center font-mono">${fmt(L.r1)}</td>
-          <td class="text-center font-mono">${fmt(L.r2)}</td>
-          <td class="text-center font-bold">≥ 1:2</td>
-        </tr>
-        <tr>
-          <td class="py-1.5 text-emerald-400 font-bold">看跌</td>
-          <td class="text-center">跌破${fmt(L.s1)}反彈撐不住</td>
-          <td class="text-center font-mono">${(L.s1 * 0.97).toFixed(2)}～${fmt(L.s1)}</td>
-          <td class="text-center font-mono text-rose-400">${fmt(L.r1)}</td>
-          <td class="text-center font-mono">${fmt(L.s2)}</td>
-          <td class="text-center font-mono">${fmt(L.strongS)}</td>
-          <td class="text-center font-bold">≥ 1:2</td>
-        </tr>
-      </tbody>
-    </table>
-    <p class="text-[10px] text-slate-500 mt-2">※ 這只是參考，實際要根據次日盤中走勢靈活調整</p>`;
 
   return `
     <div class="bg-slate-900 text-slate-100 rounded-2xl shadow-xl overflow-hidden">
@@ -1108,21 +1090,9 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
         ${panel('1', '目前走勢', ul(trendBullets))}
         ${panel('2', '重要價格區間', `<div class="space-y-1.5 text-xs">${keyLevels}</div>`)}
         ${panel('3', '建議買進的價格範圍', `<div class="space-y-2">${entryZonesHtml}</div>`, 'cyan')}
-        ${panel('4', '操作策略', strategy)}
-        ${panel('5', '🛡️ 風險控制（超重要！）', ul([
-          '每次操作虧損不要超過你總資金的 2%',
-          '設好停損點就要確實執行，不要因為捨不得就不停損',
-          '獲利機會要比虧損風險至少大 2 倍以上才值得做',
-          '重大新聞發布前後，不要把大量資金壓在同一支股票'
-        ]), 'cyan')}
-        <div class="sm:col-span-2">${panel('6', '操作計畫（參考）', entryTable, 'cyan')}</div>
-        ${panel('7', '🔰 一定要記住', checks([
-          '確認所有條件達成了再買，不要衝動',
-          '設好停損點和停利點，到了就要賣',
-          '不要因為恐懼、貪婪做決定'
-        ]), 'emerald')}
-        ${panel('8', '接下來要觀察的事', checks(watchPoints), 'emerald')}
-        ${panel('9', '補充說明', ul(noteHints), 'slate')}
+        <div class="sm:col-span-2">${panel('4', '操作策略與計畫', strategy, 'cyan')}</div>
+        ${panel('5', '接下來要觀察的事', checks(watchPoints), 'emerald')}
+        ${panel('6', '補充說明', ul(noteHints), 'slate')}
       </div>
 
     </div>
