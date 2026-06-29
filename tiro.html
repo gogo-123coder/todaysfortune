@@ -1005,50 +1005,104 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
       </div>`;
   }).join('');
 
-  // Panel 4: 操作策略與計畫（整合版）
-  const strategy = `
+  // ─────────────────────────────────────────────────────────────────
+  // Panel 4：操作策略與計畫（重寫版）
+  // 做多公式：
+  //   進場基準 = price（現價，區間上緣，最保守）
+  //   停損     = L.s1（前提「守住 s1」→ 跌破就停損，邏輯一致）
+  //   風險     = price - L.s1
+  //   獲利①   = L.r1 - price
+  //   獲利②   = L.r2 - price
+  //   RR       = 獲利 / 風險（顯示 1:N）
+  //
+  // 做空公式：
+  //   前提     = 跌破 s1 後反彈撐不住，在 s1 附近放空
+  //   進場基準 = L.s1（最保守，區間上緣）
+  //   停損     = L.r1（第一壓力位，重新站回去就停損）
+  //   風險     = L.r1 - L.s1
+  //   獲利①   = L.s1 - L.s2
+  //   獲利②   = L.s1 - L.strongS
+  //   RR       = 獲利 / 風險（顯示 1:N）
+  //
+  // 防呆：所有 RR < 0 或資料異常均顯示警告標籤，不顯示錯誤數字
+  // ─────────────────────────────────────────────────────────────────
+  const strategy = (() => {
+    const r2 = v => Math.round(v * 100) / 100;
+    const rrStr = (gain, risk) => {
+      if (risk <= 0) return { text: '—', warn: true };
+      if (gain <= 0) return { text: '負', warn: true };
+      return { text: '1:' + (gain / risk).toFixed(1), warn: false };
+    };
+
+    // ── 做多 ──────────────────────────────────────────────────────
+    const longEntry = price;           // 進場基準 = 現價（最保守）
+    const longStop  = L.s1;            // 停損 = 第一支撐（守不住就停損）
+    const longRisk  = r2(longEntry - longStop);
+    const longG1    = r2(L.r1 - longEntry);
+    const longG2    = r2(L.r2 - longEntry);
+    const longRR1   = rrStr(longG1, longRisk);
+    const longRR2   = rrStr(longG2, longRisk);
+    // 防呆：停損必須低於進場
+    const longValid = longStop < longEntry;
+    const longWarn  = !longValid
+      ? '<div class="text-xs text-amber-400 mt-1">⚠️ 資料異常：停損價高於進場價，請確認關鍵價位計算</div>'
+      : '';
+
+    // ── 做空 ──────────────────────────────────────────────────────
+    const shortEntry = L.s1;           // 進場基準 = s1（在 s1 附近放空）
+    const shortStop  = L.r1;           // 停損 = r1（站回第一壓力就回補）
+    const shortRisk  = r2(shortStop - shortEntry);
+    const shortG1    = r2(shortEntry - L.s2);
+    const shortG2    = r2(shortEntry - L.strongS);
+    const shortRR1   = rrStr(shortG1, shortRisk);
+    const shortRR2   = rrStr(shortG2, shortRisk);
+    // 防呆：停損必須高於進場；目標必須低於進場
+    const shortValid = shortStop > shortEntry && L.s2 < shortEntry && L.strongS < L.s2;
+    const shortWarnMsgs = [];
+    if (shortStop <= shortEntry) shortWarnMsgs.push('停損價低於等於進場價');
+    if (L.s2 >= shortEntry)     shortWarnMsgs.push('目標①高於等於進場價');
+    if (L.strongS >= L.s2)     shortWarnMsgs.push('目標②高於等於目標①');
+    const shortWarn = shortWarnMsgs.length
+      ? `<div class="text-xs text-amber-400 mt-1">⚠️ 資料異常：${shortWarnMsgs.join('、')}，請確認關鍵價位計算</div>`
+      : '';
+
+    const rrTag = (rr) => rr.warn
+      ? `<span class="text-xs text-amber-400 ml-1">${rr.text}</span>`
+      : `<span class="text-xs text-slate-400 ml-1">${rr.text}</span>`;
+
+    return `
     <div class="space-y-4">
 
       <!-- 做多 -->
-      ${(() => {
-        // 做多：買進中間價估算，停損在 s2（比 s1 更低一層）
-        const longEntry = Math.round((L.s1 + price) / 2 * 100) / 100; // 買進區間中間估算
-        const longStop  = L.s2;                        // 停損：跌破第二道防線
-        const longRisk  = longEntry - longStop;         // 每股虧損
-        const longGain1 = L.r1 - longEntry;             // 目標①獲利
-        const longGain2 = L.r2 - longEntry;             // 目標②獲利
-        const rr1 = longRisk > 0 ? (longGain1 / longRisk).toFixed(1) : '—';
-        const rr2 = longRisk > 0 ? (longGain2 / longRisk).toFixed(1) : '—';
-        return `
       <div class="bg-rose-900/30 border-l-4 border-rose-400 rounded-r-xl px-4 py-3 space-y-2">
         <div class="text-rose-400 font-black text-sm mb-1">📈 看漲（做多）的操作方式</div>
         <div class="flex flex-wrap gap-3">
           <div class="flex-1 min-w-[120px]">
             <div class="text-slate-400 text-xs mb-0.5">前提條件</div>
-            <div class="text-sm font-medium">守住 <span class="font-black text-slate-100">${fmt(L.s1)}</span> 以上</div>
+            <div class="text-sm font-medium">守住 <span class="font-black text-slate-100">${fmt(longStop)}</span> 以上</div>
           </div>
           <div class="flex-1 min-w-[120px]">
-            <div class="text-slate-400 text-xs mb-0.5">買進區間 ↑</div>
-            <div class="text-base font-black font-mono text-slate-100">${fmt(L.s1)} ～ ${fmt(price)}</div>
+            <div class="text-slate-400 text-xs mb-0.5">買進區間（現價附近）</div>
+            <div class="text-base font-black font-mono text-slate-100">${fmt(longStop)} ～ ${fmt(longEntry)}</div>
           </div>
           <div class="flex-1 min-w-[120px]">
             <div class="text-slate-400 text-xs mb-0.5">停損點（跌破就賣）↓</div>
             <div class="text-base font-black font-mono text-emerald-400">${fmt(longStop)}</div>
           </div>
           <div class="flex-1 min-w-[120px]">
-            <div class="text-slate-400 text-xs mb-0.5">獲利目標① ↑　賺賠比</div>
-            <div class="text-base font-black font-mono text-rose-300">${fmt(L.r1)} <span class="text-xs text-slate-400 ml-1">1:${rr1}</span></div>
+            <div class="text-slate-400 text-xs mb-0.5">獲利目標① ↑　風險報酬</div>
+            <div class="text-base font-black font-mono text-rose-300">${fmt(L.r1)} ${rrTag(longRR1)}</div>
           </div>
           <div class="flex-1 min-w-[120px]">
-            <div class="text-slate-400 text-xs mb-0.5">獲利目標② ↑　賺賠比</div>
-            <div class="text-base font-black font-mono text-rose-300">${fmt(L.r2)} <span class="text-xs text-slate-400 ml-1">1:${rr2}</span></div>
+            <div class="text-slate-400 text-xs mb-0.5">獲利目標② ↑　風險報酬</div>
+            <div class="text-base font-black font-mono text-rose-300">${fmt(L.r2)} ${rrTag(longRR2)}</div>
           </div>
         </div>
+        ${longWarn}
         <div class="mt-2 pt-2 border-t border-rose-700/40 text-sm font-bold text-slate-100">
-          💬 守住 <span class="text-rose-300">${fmt(L.s1)}</span> 買進，跌破 <span class="text-emerald-400">${fmt(longStop)}</span> 停損，往上看 <span class="text-rose-300">${fmt(L.r1)}</span>
+          💬 守住 <span class="text-rose-300">${fmt(longStop)}</span> 買進，跌破 <span class="text-emerald-400">${fmt(longStop)}</span> 停損，往上看 <span class="text-rose-300">${fmt(L.r1)}</span>
         </div>
-      </div>`;
-      })()}
+      </div>
 
       <!-- 做空（折疊） -->
       <details class="group">
@@ -1057,46 +1111,38 @@ function buildTradingPlan(code, name, market, industry, analysis, ohlc, lastDate
           📉 看跌（做空）<span class="font-normal text-slate-500 text-xs ml-1">— 需借券，新手可跳過</span>
         </summary>
         <div class="mt-3 bg-emerald-900/30 border-l-4 border-emerald-400 rounded-r-xl px-4 py-3 space-y-2">
-          ${(() => {
-            const shortEntry = L.s1 * 0.985;
-            const shortStop  = Math.round(L.s1 * 1.03 * 100) / 100;
-            const shortRisk  = shortStop - shortEntry;
-            const shortGain1 = shortEntry - L.s2;
-            const shortGain2 = shortEntry - L.strongS;
-            const rr1 = shortRisk > 0 ? (shortGain1 / shortRisk).toFixed(1) : '—';
-            const rr2 = shortRisk > 0 ? (shortGain2 / shortRisk).toFixed(1) : '—';
-            return `
           <div class="flex flex-wrap gap-3">
             <div class="flex-1 min-w-[120px]">
               <div class="text-slate-400 text-xs mb-0.5">前提條件</div>
-              <div class="text-sm font-medium">股價跌破 <span class="font-black text-slate-100">${fmt(L.s1)}</span> 且反彈撐不住</div>
+              <div class="text-sm font-medium">跌破 <span class="font-black text-slate-100">${fmt(shortEntry)}</span> 反彈撐不住再放空</div>
             </div>
             <div class="flex-1 min-w-[120px]">
-              <div class="text-slate-400 text-xs mb-0.5">放空進場區間 ↓</div>
-              <div class="text-base font-black font-mono text-slate-100">${(L.s1 * 0.97).toFixed(2)} ～ ${fmt(L.s1)}</div>
+              <div class="text-slate-400 text-xs mb-0.5">放空進場區間（s1附近）</div>
+              <div class="text-base font-black font-mono text-slate-100">${fmt(L.s2)} ～ ${fmt(shortEntry)}</div>
             </div>
             <div class="flex-1 min-w-[120px]">
-              <div class="text-slate-400 text-xs mb-0.5">停損點（站回此價就回補）↑</div>
+              <div class="text-slate-400 text-xs mb-0.5">停損點（站回就回補）↑</div>
               <div class="text-base font-black font-mono text-rose-400">${fmt(shortStop)}</div>
             </div>
             <div class="flex-1 min-w-[120px]">
-              <div class="text-slate-400 text-xs mb-0.5">獲利目標① ↓　賺賠比</div>
-              <div class="text-base font-black font-mono text-emerald-300">${fmt(L.s2)} <span class="text-xs text-slate-400 ml-1">1:${rr1}</span></div>
+              <div class="text-slate-400 text-xs mb-0.5">獲利目標① ↓　風險報酬</div>
+              <div class="text-base font-black font-mono text-emerald-300">${fmt(L.s2)} ${rrTag(shortRR1)}</div>
             </div>
             <div class="flex-1 min-w-[120px]">
-              <div class="text-slate-400 text-xs mb-0.5">獲利目標② ↓　賺賠比</div>
-              <div class="text-base font-black font-mono text-emerald-300">${fmt(L.strongS)} <span class="text-xs text-slate-400 ml-1">1:${rr2}</span></div>
+              <div class="text-slate-400 text-xs mb-0.5">獲利目標② ↓　風險報酬</div>
+              <div class="text-base font-black font-mono text-emerald-300">${fmt(L.strongS)} ${rrTag(shortRR2)}</div>
             </div>
           </div>
+          ${shortWarn}
           <div class="mt-2 pt-2 border-t border-emerald-700/40 text-sm font-bold text-slate-100">
-            💬 跌破 <span class="text-emerald-300">${fmt(L.s1)}</span> 放空，站回 <span class="text-rose-400">${fmt(shortStop)}</span> 停損，往下看 <span class="text-emerald-300">${fmt(L.s2)}</span>
-          </div>`;
-          })()}
+            💬 跌破 <span class="text-emerald-300">${fmt(shortEntry)}</span> 放空，站回 <span class="text-rose-400">${fmt(shortStop)}</span> 停損，往下看 <span class="text-emerald-300">${fmt(L.s2)}</span>
+          </div>
         </div>
       </details>
 
-      <p class="text-xs text-slate-500">※ 僅供參考，實際操作請依盤中走勢靈活調整</p>
+      <p class="text-xs text-slate-500">※ 進場基準以現價計算（做多）/ s1 計算（做空）。實際操作請依盤中走勢靈活調整。</p>
     </div>`;
+  })();
 
   return `
     <div class="bg-slate-900 text-slate-100 rounded-2xl shadow-xl overflow-hidden">
