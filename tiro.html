@@ -380,6 +380,7 @@ const NAME_CACHE_KEY = 'taiwan_stock_info_v2'; // 含中文名、行業、上市
 // 圖表自訂插件：表格點擊時，在圖上畫一條垂直藍線並標日期
 const verticalLinePlugin = {
   id: 'verticalLine',
+
   afterDraw: (chart) => {
     const cfg = chart.options.plugins?.verticalLine;
     if (!cfg || cfg.x == null) return;
@@ -1332,7 +1333,7 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
                 <th class="px-2.5 py-2 text-right font-bold">漲跌</th>
                 <th class="px-2.5 py-2 text-right font-bold">漲跌幅%</th>
                 <th class="px-2.5 py-2 text-right font-bold">成交量(含零股)</th>
-                <th class="px-2.5 py-2 text-right font-bold">成交漲跌幅</th>
+                <th class="px-2.5 py-2 text-right font-bold">成交量增減%</th>
                 <th class="px-2.5 py-2 text-right font-bold">MA5</th>
                 <th class="px-2.5 py-2 text-right font-bold">MA20</th>
                 <th class="px-2.5 py-2 text-right font-bold">MA60</th>
@@ -1653,7 +1654,7 @@ function renderResult(code, meta, timestamps, opens, highs, lows, closes, volume
         if (wan < 1) return Math.round(v / 1000).toLocaleString();
         return wan.toFixed(2) + '萬';
       };
-      const fmtVolChg = v => v == null ? '<span class="text-slate-300">—</span>' : `${volSign} ${Math.abs(v).toFixed(0)}%`;
+      const fmtVolChg = v => v == null ? '<span class="text-slate-300">—</span>' : `量${volSign}${Math.abs(v).toFixed(0)}%`;
 
       rows.push(`
         <tr class="row ${baseRowCls} cursor-pointer border-b border-slate-100 transition" data-ts="${timestamps[i]}" data-idx="${i}">
@@ -2132,6 +2133,7 @@ function renderUsMarket(payload) {
       advice = '👍 大盤受台積電拖累，但中小型股和 OTC 市場相對抗跌。今天可以放心留意非 AI 的題材股。';
     } else if (taiexEst < -0.5 && otcEst < -0.5) {
       advice = '⚠️ 大盤和中小型股都偏弱，今天整體偏保守，減少操作為宜。';
+
     } else if (taiexEst > 0.5 && otcEst > 0.3) {
       advice = '🚀 大盤和 OTC 雙強，市場情緒好，題材股跟著活躍的機率高。';
     } else if (otcEst > taiexEst + 0.3) {
